@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover, interactive-widget=overlays-content">
+<title>Kasa – Masa Oyunu Bankası</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--card:#fff;--ink:#12151c;--mut:#667085;--line:#d9dee7;--acc:#12151c;--onacc:#fff;--bad:#c62828;--good:#1b8a4b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--card:#1a1f29;--ink:#f2f4f8;--mut:#98a2b3;--line:#2a313e;--acc:#f2f4f8;--onacc:#12151c;--bad:#ff6b6b;--good:#4cd48a}}
+:root[data-theme="dark"]{--bg:#0f1218;--card:#1a1f29;--ink:#f2f4f8;--mut:#98a2b3;--line:#2a313e;--acc:#f2f4f8;--onacc:#12151c;--bad:#ff6b6b;--good:#4cd48a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.3 "Bricolage Grotesque",system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+input{font:inherit;color:inherit;user-select:text;-webkit-user-select:text}
+#app{max-width:900px;margin:0 auto;padding:8px 12px;height:100dvh;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;padding:6px 2px 12px}
+h1{margin:0;font-size:24px;font-weight:800}small{color:var(--mut)}
+.ic{width:48px;height:48px;border-radius:14px;background:var(--card);margin-left:8px;display:inline-grid;place-items:center}
+.ic svg{width:24px;height:24px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card{position:relative;background:color-mix(in srgb,var(--c,var(--mut)) 14%,var(--card));border-radius:22px;padding:14px 16px 16px;border-left:10px solid var(--c,var(--mut));transition:transform .15s,box-shadow .15s;touch-action:pan-y}
+.card.bank{--c:var(--mut);display:flex;align-items:center;gap:10px;border-left-style:dashed;margin-bottom:12px}
+.card.bank .bal{margin-left:auto;font-size:28px}
+.grid{display:grid;gap:8px;flex:1;min-height:0;grid-template-columns:repeat(var(--cols),minmax(0,1fr))}
+.top{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:800;overflow-wrap:anywhere}
+.grip{touch-action:none;padding:6px 8px;margin:-6px -4px;color:var(--mut);font-size:20px}
+.bal{display:block;font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(38px,12vw,56px);letter-spacing:-.02em;margin:4px 0 10px;transition:color .3s}
+.bal.up{color:var(--good)}.bal.dn{color:var(--bad)}
+.st{width:100%;min-height:52px;border-radius:14px;background:var(--c);color:#10131a;font-weight:800;display:flex;justify-content:center;gap:8px;align-items:center;padding:8px;font-size:15px}
+.st em{font-style:normal;background:#10131a22;border-radius:8px;padding:2px 8px}
+.st:active,.b1:active,.b2:active{transform:scale(.97)}
+.card.drag{opacity:.35}.dg [data-drop]:not(.drag){outline:2px dashed var(--mut);outline-offset:2px}
+.dg [data-drop].hot{outline:4px solid var(--acc);transform:scale(1.025);box-shadow:0 8px 30px #0004}
+.ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;width:130px;padding:10px 14px;border-radius:16px;background:var(--c);color:#10131a;font-weight:800;box-shadow:0 12px 30px #0006;transform:translate(-999px,0)}
+.ghost b{display:block;font-size:22px}
+footer{display:flex;gap:10px;padding-top:8px}
+footer button{flex:1}
+.b1,.b2{min-height:58px;border-radius:16px;font-weight:800;padding:8px 12px;transition:transform .1s}
+.b1{background:var(--acc);color:var(--onacc)}.b2{background:var(--card);border:2px solid var(--line)}
+.b1:disabled{opacity:.35}
+#ov,#ov2{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;justify-content:center;background:#0008}
+#ov2{z-index:70}
+.dlg{width:100%;max-width:520px;max-height:92%;overflow:auto;background:var(--card);border-radius:24px 24px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:up .2s}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.dlg h2{margin:0 0 10px;font-size:22px;font-weight:800}
+.r{display:flex;justify-content:space-between;margin:6px 0;font-size:17px}.r span{color:var(--mut)}
+label{display:block;color:var(--mut);margin-top:12px}
+input[type=text],input:not([type]),input[inputmode]{width:100%;min-height:54px;margin-top:4px;padding:8px 14px;font-size:22px;font-weight:800;border-radius:14px;border:2px solid var(--line);background:var(--bg)}
+input:focus{outline:3px solid var(--acc);outline-offset:0}
+.msg{min-height:24px;margin:10px 0;color:var(--bad)}.msg.ok{color:var(--good)}
+.btns{display:flex;gap:10px}.btns button{flex:1}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.sw button{width:40px;height:40px;border-radius:50%}.sw .sel{outline:3px solid var(--acc);outline-offset:2px}
+.prow{display:flex;align-items:center;gap:8px;margin:6px 0}.prow input{flex:1;font-size:18px}
+.dot{width:40px;height:40px;border-radius:50%;flex:none}.x{width:44px;height:44px;border-radius:12px;color:var(--bad);font-size:18px}
+.sec{background:var(--card);border-radius:20px;padding:6px 16px 16px;margin-bottom:14px}
+.np{border-top:1px solid var(--line);margin-top:10px;padding-top:6px}.np .b1{width:100%;margin-top:8px}
+.h{background:var(--card);border-radius:18px;margin:10px 0;padding:12px 14px;display:flex;gap:12px;align-items:flex-start;border-left:6px solid var(--k)}
+.h.u{opacity:.55}.h.u .t{text-decoration:line-through}
+.h .t{font-weight:800;font-size:17px;overflow-wrap:anywhere}.h .m{color:var(--mut);font-size:13px}.h .a{margin-left:auto;font-weight:800;font-size:19px;white-space:nowrap}
+.h .sub{margin-top:8px;font-size:15px}.h .sub div{display:flex;justify-content:space-between;gap:12px}
+.h .in{flex:1;min-width:0}.undo{margin-top:8px;min-height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--line);font-weight:800;font-size:14px}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+#toast{position:fixed;left:14px;right:14px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:80;max-width:520px;margin:0 auto;background:var(--acc);color:var(--onacc);border-radius:16px;padding:12px 16px;display:none;align-items:center;gap:12px;font-weight:800}
+#toast button{margin-left:auto;min-height:44px;padding:0 12px;text-decoration:underline;font-weight:800}
+.empty{text-align:center;color:var(--mut);padding:50px 10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+header{padding:2px 0 8px}.ic{width:44px;height:44px}
+.card.bank{margin-bottom:8px;padding:6px 14px}.card.bank .bal{margin:0 0 0 auto;font-size:26px}
+.grid .card{container-type:inline-size;display:flex;flex-direction:column;justify-content:space-between;min-height:0;padding:8px 10px;border-left-width:8px;overflow:hidden}
+.grid .top{font-size:clamp(14px,6cqw,20px)}.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grid .bal{font-size:clamp(16px,min(15cqw,5.5dvh),58px);white-space:nowrap;margin:2px 0}
+.grid .st{min-height:0;height:clamp(38px,26%,56px);font-size:clamp(11px,4.2cqw,15px);padding:2px;gap:6px}
+.grid[data-d="3"] .full,.grid[data-d="3"] .st em,.grid:not([data-d="3"]) .sh{display:none}
+footer .b1,footer .b2{min-height:54px}
+.body{flex:1;overflow:auto;min-height:0}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;background:var(--card);border-radius:18px;padding:2px 14px 12px}.sg .w{grid-column:1/-1}.sg label{margin-top:8px}.sg input:not([type=checkbox]){min-height:44px;font-size:18px}
+.ph{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px}.sm{min-height:44px;padding:0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{display:inline-flex;border-radius:14px;background:var(--card);border:2px solid var(--line);overflow:hidden}
+.chip.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,var(--card))}
+.chip button{min-height:46px;padding:0 12px;font-weight:800;display:flex;align-items:center;gap:8px}.chip i{width:16px;height:16px;border-radius:50%;background:var(--c)}.chip .cx{color:var(--mut);padding:0 12px;font-size:20px}
+.pv{height:48px;border-radius:14px;margin:12px 0 4px}input[type=range]{width:100%;margin:6px 0;accent-color:var(--acc)}
+.disp{min-height:56px;display:grid;place-items:center;border-radius:14px;background:var(--bg);border:2px solid var(--acc);font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}.disp.z{color:var(--mut)}
+.lb{color:var(--mut);margin-top:6px}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.kp button{min-height:clamp(40px,7.5dvh,58px);border-radius:14px;background:var(--bg);font-size:24px;font-weight:800;transition:transform .1s}.kp button:active{transform:scale(.94)}
+#toast{white-space:pre-line}
+.b2:disabled{opacity:.35}
+select{width:100%;min-height:44px;margin-top:4px;padding:0 10px;font:inherit;font-size:16px;font-weight:800;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.fx{position:absolute;top:6px;right:8px;font-weight:800;font-size:clamp(13px,5cqw,20px);padding:2px 8px;border-radius:10px;background:var(--card);animation:fx 1.6s forwards;pointer-events:none}
+@keyframes fx{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+#toast{bottom:auto;top:calc(8px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:14px}
+.nd{animation:nd .3s}@keyframes nd{50%{transform:scale(.95)}}
+.ad{margin:12px 0;min-height:50px;border:1px dashed var(--line);border-radius:12px;display:grid;place-items:center;color:var(--mut);font-size:12px}
+.pk{margin:10px 0}.prow2{display:flex;gap:8px;margin:6px 0}.prow2>button:first-child{flex:1;min-height:48px;border-radius:12px;border:2px solid var(--line);text-align:start;padding:0 14px;font-weight:800}.prow2.on>button:first-child{border-color:var(--acc)}.pv2{width:52px;border-radius:12px;background:var(--bg);font-size:18px}
+</style></head><body>
+<div id="app"></div><div id="ov"></div><div id="ov2"></div><div id="toast"></div>
+<script>
+/* ===== Yerelleştirme ===== */
+const TR={bank:'BANKA',app:'Kasa',hint:'Kartı basılı tutup sürükleyin',pass:'BAŞLANGIÇTAN GEÇTİ',payAll:'HERKESE ÖDE',colAll:'HERKESTEN AL',cancel:'İPTAL',ok:'ONAYLA',undo:'İŞLEMİ GERİ AL',undoShort:'GERİ AL',undone:'Geri alındı',
+amt:'Tutar',perHead:'Kişi başı tutar',cnt:'Oyuncu sayısı',total:'Toplam',payer:'Ödeyen',recv:'Alıcı',enter:'Bir tutar girin.',
+bankLow:'Bankada yeterli para yok.',noPlayer:'Bu işlem geri alınamaz: oyuncu silinmiş.',badAmt:'Geçerli bir tutar girin.',fail:'Bu işlem gerçekleştirilemedi.',min2:'En az 2 oyuncu gerekli.',
+emptyName:'Oyuncu adı boş bırakılamaz.',dupName:'Bu isimde bir oyuncu zaten var.',max:'En fazla 8 oyuncu olabilir.',
+setup:'OYUN AYARLARI',gname:'Oyun adı (isteğe bağlı)',cur:'Para birimi',startM:'Başlangıç parası',passM:'Başlangıçtan geçme parası',bankM:'Banka başlangıç bakiyesi',unl:'Banka bakiyesi sınırsız olsun',players:'Oyuncular',pname:'Oyuncu adı',addP:'OYUNCU EKLE',startG:'OYUNU BAŞLAT',
+hist:'İŞLEM GEÇMİŞİ',noTx:'Henüz işlem yok. Bir kartı sürükleyerek başlayın.',newG:'YENİ OYUN',newMsg:'Mevcut oyun ve işlem geçmişi silinecek. Devam etmek istiyor musunuz?',
+delP:'{n} silinsin mi? Bakiyesi bankaya aktarılır.',del:'SİL',manage:'Oyuncuları yönet',close:'KAPAT',menu:'OYUN YÖNETİMİ',dragHint:'Kartınızı bu düğmenin üstüne sürükleyin.',
+startTx:'Başlangıçtan geçti',fromN:'{k} Oyuncudan → {n}',toN:'{n} → {k} Oyuncu',noPool:'Henüz kayıtlı oyuncu yok. + YARAT ile ekleyin.',create:'+ YARAT',mkBtn:'YARAT',newP:'YENİ OYUNCU',leave:'{n} oyundan çıkarılsın mı? Bakiyesi bankaya aktarılır.',delPool:'{n} kayıtlı oyunculardan kalıcı olarak silinsin mi?',hue:'Renk tonu',sat:'Doygunluk',val:'Parlaklık',passSh:'BAŞLANGIÇ',lang:'Dil',sound:'SES AYARLARI',soundOn:'Ses efektleri',vol:'Ses seviyesi',preview:'Dinle',premium:'Premium',locked:'Premium paket: dinleyebilirsiniz, kullanmak için satın alma gerekir.',exitQ:'Oyundan çıkmak istediğinize emin misiniz?',yes:'EVET',no:'HAYIR',adLabel:'Reklam alanı',pk_classic:'Klasik Kasa',pk_digital:'Modern Dijital',pk_minimal:'Minimal',pk_casino:'Casino',pk_luxury:'Lüks',pk_retro:'Retro'};
+let LANG='tr';try{LANG=localStorage.getItem('kasa.lang')||'tr'}catch(e){}
+const LANGS=[['tr','Türkçe'],['en','English'],['es','Español'],['pt','Português'],['fr','Français'],['de','Deutsch'],['it','Italiano'],['ru','Русский'],['ar','العربية'],['zh','中文'],['ja','日本語'],['ko','한국어'],['hi','हिन्दी']];
+const EN={bank:'BANK',hint:'Press and hold a card, then drag',pass:'PASSED START',payAll:'PAY EVERYONE',colAll:'COLLECT FROM ALL',undo:'UNDO',undoShort:'UNDO',undone:'Undone',amt:'Amount',perHead:'Amount per player',cnt:'Players',total:'Total',payer:'Payer',recv:'Receiver',enter:'Enter an amount.',bankLow:'The bank does not have enough money.',noPlayer:'Cannot undo: the player was removed.',badAmt:'Enter a valid amount.',fail:'This action could not be completed.',min2:'At least 2 players required.',emptyName:'Player name cannot be empty.',dupName:'A player with this name already exists.',max:'At most 8 players.',setup:'GAME SETTINGS',gname:'Game name (optional)',cur:'Currency',startM:'Starting money',passM:'Passing-start money',bankM:'Bank starting balance',unl:'Unlimited bank',players:'Players',pname:'Player name',startG:'START GAME',hist:'TRANSACTION HISTORY',noTx:'No transactions yet. Drag a card to begin.',newG:'NEW GAME',newMsg:'The current game and its history will be deleted. Continue?',del:'DELETE',menu:'GAME MENU',close:'CLOSE',startTx:'Passed Start',fromN:'{k} players → {n}',toN:'{n} → {k} players',noPool:'No saved players yet. Add one with + CREATE.',create:'+ CREATE',mkBtn:'CREATE',newP:'NEW PLAYER',leave:'Remove {n} from the game? Their balance goes to the bank.',delPool:'Permanently delete {n} from saved players?',hue:'Hue',sat:'Saturation',val:'Brightness',passSh:'START',lang:'Language',sound:'SOUND SETTINGS',soundOn:'Sound effects',vol:'Volume',preview:'Preview',premium:'Premium',locked:'Premium pack: you can preview it; purchase is required to use it.',exitQ:'Are you sure you want to leave the game?',yes:'YES',no:'NO',adLabel:'Ad space',pk_classic:'Classic Register',pk_digital:'Modern Digital',pk_minimal:'Minimal',pk_casino:'Casino',pk_luxury:'Luxury',pk_retro:'Retro',ok:'CONFIRM',cancel:'CANCEL'};
+const K=['ok','cancel','payAll','colAll','pass','passSh','undo','hist','players','startG','exitQ','yes','no','newG'];
+const PK_={es:['ACEPTAR','CANCELAR','PAGAR A TODOS','COBRAR A TODOS','PASÓ POR LA SALIDA','SALIDA','DESHACER','HISTORIAL','JUGADORES','INICIAR JUEGO','¿Seguro que quieres salir del juego?','SÍ','NO','NUEVO JUEGO'],
+pt:['CONFIRMAR','CANCELAR','PAGAR A TODOS','RECEBER DE TODOS','PASSOU PELO INÍCIO','INÍCIO','DESFAZER','HISTÓRICO','JOGADORES','INICIAR JOGO','Tem certeza de que quer sair do jogo?','SIM','NÃO','NOVO JOGO'],
+fr:['CONFIRMER','ANNULER','PAYER TOUT LE MONDE','PERCEVOIR DE TOUS','PASSÉ PAR LE DÉPART','DÉPART','DÉFAIRE','HISTORIQUE','JOUEURS','DÉMARRER','Voulez-vous vraiment quitter le jeu ?','OUI','NON','NOUVELLE PARTIE'],
+de:['BESTÄTIGEN','ABBRECHEN','ALLEN ZAHLEN','VON ALLEN KASSIEREN','LOS ÜBERQUERT','LOS','RÜCKGÄNGIG','VERLAUF','SPIELER','SPIEL STARTEN','Möchten Sie das Spiel wirklich verlassen?','JA','NEIN','NEUES SPIEL'],
+it:['CONFERMA','ANNULLA','PAGA TUTTI','RISCUOTI DA TUTTI','PASSATO DAL VIA','VIA','ANNULLA OPERAZIONE','CRONOLOGIA','GIOCATORI','INIZIA PARTITA','Vuoi davvero uscire dal gioco?','SÌ','NO','NUOVA PARTITA'],
+ru:['ОК','ОТМЕНА','ЗАПЛАТИТЬ ВСЕМ','ЗАБРАТЬ У ВСЕХ','ПРОШЁЛ СТАРТ','СТАРТ','ОТМЕНИТЬ ОПЕРАЦИЮ','ИСТОРИЯ','ИГРОКИ','НАЧАТЬ ИГРУ','Вы уверены, что хотите выйти из игры?','ДА','НЕТ','НОВАЯ ИГРА'],
+ar:['تأكيد','إلغاء','ادفع للجميع','اقبض من الجميع','عبر البداية','البداية','تراجع عن العملية','السجل','اللاعبون','ابدأ اللعبة','هل أنت متأكد أنك تريد الخروج من اللعبة؟','نعم','لا','لعبة جديدة'],
+zh:['确认','取消','付给所有人','向所有人收款','经过起点','起点','撤销操作','历史记录','玩家','开始游戏','确定要退出游戏吗？','是','否','新游戏'],
+ja:['確認','キャンセル','全員に支払う','全員から受け取る','スタート通過','スタート','操作を取り消す','履歴','プレイヤー','ゲーム開始','ゲームを終了しますか？','はい','いいえ','新しいゲーム'],
+ko:['확인','취소','모두에게 지불','모두에게 받기','출발 통과','출발','작업 취소','내역','플레이어','게임 시작','게임을 종료하시겠습니까?','예','아니요','새 게임'],
+hi:['पुष्टि करें','रद्द करें','सबको भुगतान','सबसे वसूलें','शुरुआत पार की','शुरुआत','कार्रवाई पूर्ववत','इतिहास','खिलाड़ी','खेल शुरू करें','क्या आप खेल से बाहर निकलना चाहते हैं?','हाँ','नहीं','नया खेल']};
+const L={tr:TR,en:EN};for(const c in PK_)L[c]=Object.fromEntries(K.map((k,i)=>[k,PK_[c][i]]));
+const T=(k,p={})=>String((L[LANG]&&L[LANG][k])||EN[k]||TR[k]||k).replace(/\{(\w+)\}/g,(_,x)=>p[x]);
+document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';
+
+/* ===== İşlem motoru (saf, tamsayı) ===== */
+const BANK='bank',uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const gp=(s,id)=>s.players.find(p=>p.id===id);
+function applyLegs(s,legs,rev){ // atomik: önce doğrula, sonra uygula
+  const d=new Map();
+  for(const l of legs){const f=rev?l.to:l.from,t=rev?l.from:l.to;d.set(f,(d.get(f)||0)-l.amt);d.set(t,(d.get(t)||0)+l.amt)}
+  const short=[];
+  for(const[id,v]of d){
+    if(id===BANK){if(!s.set.unl&&s.bank+v<0)short.push(id)}
+    else if(!gp(s,id))return{err:'gone'}
+  }
+  if(short.length)return{err:'funds',short};
+  for(const[id,v]of d){if(id===BANK){if(!s.set.unl)s.bank+=v}else gp(s,id).bal+=v}
+  return{ok:true};
+}
+function record(s,type,legs,x={}){
+  if(!legs.length||legs.some(l=>!Number.isSafeInteger(l.amt)||l.amt<=0||l.from===l.to))return{err:'amount'};
+  const r=applyLegs(s,legs);if(r.err)return r;
+  const names={};legs.forEach(l=>[l.from,l.to].forEach(i=>names[i]=i===BANK?T('bank'):gp(s,i).name));
+  const tx={id:uid(),type,ts:Date.now(),legs,names,undone:false,...x};
+  s.tx.push(tx);return{ok:true,tx};
+}
+const transferMoney=(s,a,b,amt)=>record(s,'p2p',[{from:a,to:b,amt}],{a,b});
+const transferFromBank=(s,b,amt)=>record(s,'bank_in',[{from:BANK,to:b,amt}],{b});
+const transferToBank=(s,a,amt)=>record(s,'bank_out',[{from:a,to:BANK,amt}],{a});
+const payEveryone=(s,a,per)=>record(s,'pay_all',s.players.filter(p=>p.id!==a).map(p=>({from:a,to:p.id,amt:per})),{a,per});
+const collectFromEveryone=(s,b,per)=>record(s,'col_all',s.players.filter(p=>p.id!==b).map(p=>({from:p.id,to:b,amt:per})),{b,per});
+const passStart=(s,b)=>record(s,'start',[{from:BANK,to:b,amt:s.set.pass}],{b});
+function undoTransaction(s,id){
+  const tx=s.tx.find(t=>t.id===id);if(!tx||tx.undone)return{err:'fail'};
+  const r=applyLegs(s,tx.legs,true);if(r.err)return r;
+  tx.undone=true;tx.undoneAt=Date.now();return{ok:true,tx};
+}
+function selfTest(){ // #test ile çalıştırılır
+  const mk=()=>({set:{pass:200,unl:false},bank:1000,tx:[],players:[{id:'a',name:'A',bal:500},{id:'b',name:'B',bal:100},{id:'c',name:'C',bal:50}]});
+  const tot=s=>s.bank+s.players.reduce((x,p)=>x+p.bal,0),R=[];let s=mk();
+  R.push(transferMoney(s,'a','b',300).ok&&s.players[1].bal===400);
+  R.push(payEveryone(s,'c',30).ok&&s.players[2].bal===-60);
+  R.push(collectFromEveryone(s,'a',50).ok);s.set.unl=true;R.push(passStart(s,'a').ok&&s.bank===1000);s.set.unl=false;
+  s=mk();R.push(payEveryone(s,'a',100).ok&&s.players[0].bal===300);const t=s.tx[0].id;
+  R.push(undoTransaction(s,t).ok&&s.players[0].bal===500&&!undoTransaction(s,t).ok);
+  R.push(passStart(s,'b').ok&&tot(s)===1650);R.push(transferMoney(s,'b','a',99999).ok&&tot(s)===1650);
+  return R;
+}
+
+/* ===== Kalıcılık ===== */
+const KEY='kasa.v1';let S=null,view='setup',draft,mnp,sheetFn=null,expanded=new Set(),prevBal={};
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+if(S&&S.players)view='main';else S=null;
+const PK='kasa.pool';let POOL=[],LAST=null;
+try{const x=JSON.parse(localStorage.getItem(PK));if(x){POOL=x.pool||[];LAST=x.last||null}}catch(e){}
+const savePool=()=>{try{localStorage.setItem(PK,JSON.stringify({pool:POOL,last:LAST}))}catch(e){}};
+if(S&&!POOL.length){POOL=S.players.map(p=>({id:p.id,name:p.name,color:p.color}));savePool()}
+
+/* ===== Yardımcılar ===== */
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const d=String(v).replace(/\D/g,'');return d?Math.min(+d,999999999):0};
+const CURS=[['$','USD'],['€','EUR'],['₺','TRY'],['£','GBP'],['¥','JPY'],['₹','INR'],['₽','RUB'],['₩','KRW']];
+const cur=()=>(S&&S.set.cur)||(draft&&draft.cur)||CURS[0][0];
+const fmt=n=>(n<0?'−':'')+cur()+Math.abs(n).toLocaleString('tr-TR');
+const COLORS=['#ff5a5f','#ffb020','#2ec27e','#2f9bff','#a66bff','#ff6fb5','#19c2c2','#9ccc3c','#ff8a3d','#8c9bff'];
+const nxtColor=l=>COLORS.find(c=>!l.some(p=>p.color===c))||COLORS[l.length%COLORS.length];
+const nmS=id=>id===BANK?T('bank'):gp(S,id).name;
+const I={h:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',m:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>'};
+const vib=n=>navigator.vibrate&&navigator.vibrate(n);
+function errMsg(r,s){
+  if(r.err==='funds')return T('bankLow');
+  return r.err==='gone'?T('noPlayer'):r.err==='amount'?T('badAmt'):T('fail');
+}
+let tt;function toast(msg,undoId,ms){
+  const t=$('#toast');t.style.display='flex';t.innerHTML=`<span>${esc(msg)}</span>`+(undoId?`<button data-a="undo" data-v="${undoId}">${T('undoShort')}</button>`:'');
+  clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',ms||(undoId?3000:2200));
+}
+const layer=(id,html)=>{const o=$(id);o.innerHTML=html;o.style.display=html?'flex':'none'};
+const closeOv=()=>{sheetFn=null;layer('#ov','');layer('#ov2','')};
+
+/* ===== Görünümler ===== */
+function render(){
+  $('#app').innerHTML=view==='setup'?setupH():view==='hist'?histH():mainH();
+  document.querySelectorAll('[data-k]').forEach(el=>{
+    const k=el.dataset.k,v=+el.dataset.v,p=prevBal[k];prevBal[k]=v;
+    if(p!==undefined&&p!==v){
+      el.classList.add(v>p?'up':'dn');setTimeout(()=>el.classList.remove('up','dn'),700);
+      const t0=performance.now(),step=t=>{const f=Math.min(1,(t-t0)/400);el.textContent=fmt(Math.round(p+(v-p)*f));if(f<1)requestAnimationFrame(step)};requestAnimationFrame(step);
+    }
+  });
+}
+function chips(){
+  const act=new Set(view==='setup'?draft.sel:S.players.map(p=>p.id));
+  return POOL.map(p=>{const on=act.has(p.id);return `<span class="chip ${on?'on':''}" style="--c:${p.color}"><button data-a="tog" data-v="${p.id}"><i></i>${on?'✓ ':''}${esc(p.name)}</button>${on&&view==='main'?'':`<button class="cx" data-a="dp" data-v="${p.id}" aria-label="Sil">×</button>`}</span>`}).join('')||`<div class="empty">${T('noPool')}</div>`;
+}
+function mainH(){
+  const s=S,n=s.players.length,cols=2;
+  return `<header><div><h1>${esc(s.set.name||T('app'))}</h1><small>${T('hint')}</small></div><div><button class="ic" data-a="hist" aria-label="${T('hist')}">${I.h}</button><button class="ic" data-a="menu" aria-label="${T('menu')}">${I.m}</button></div></header>
+<section class="card bank" data-drag="bank" data-drop="bank"><span class="grip">⠿</span><b>🏦 ${T('bank')}</b>${s.set.unl?'<strong class="bal" aria-label="Sınırsız">∞</strong>':`<strong class="bal" data-k="bank" data-v="${s.bank}">${fmt(s.bank)}</strong>`}</section>
+<div class="grid" data-d="${cols}" style="--cols:${cols};grid-template-rows:repeat(4,minmax(0,1fr))">${s.players.map(p=>`<section class="card" style="--c:${p.color}" data-drag="${p.id}" data-drop="${p.id}"><div class="top">${cols<3?'<span class="grip">⠿</span>':''}<span class="nm">${esc(p.name)}</span></div><strong class="bal" data-k="${p.id}" data-v="${p.bal}">${fmt(p.bal)}</strong><button class="st" data-a="pass" data-v="${p.id}"><span class="full">${T('pass')}</span><span class="sh">${T('passSh')}</span> <em>+${fmt(s.set.pass)}</em></button></section>`).join('')}</div>
+<footer><button class="b2" data-a="hint" data-drop="pay">${T('payAll')}</button><button class="b1" data-a="hint" data-drop="col">${T('colAll')}</button></footer>`;
+}
+function setupH(){
+  const d=draft,f=(k,l,m,w)=>`<label class="${w?'w':''}">${l}<input data-f="${k}" ${m?'inputmode="numeric"':''} value="${esc(d[k])}"></label>`;
+  return `<header><h1>${T('setup')}</h1><div style="display:flex;gap:8px;align-items:center">${langSel()}<button class="ic" data-a="snd" aria-label="${T('sound')}">🔊</button></div></header><div class="body"><div class="sg">${f('name',T('gname'),0,1)}<label>${T('cur')}<select data-f="cur">${(CURS.some(c=>c[0]===d.cur)?CURS:[[d.cur,'']].concat(CURS)).map(c=>`<option value="${esc(c[0])}" ${c[0]===d.cur?'selected':''}>${esc(c[0])}${c[1]?' — '+c[1]:''}</option>`).join('')}</select></label>${f('start',T('startM'),1)}${f('pass',T('passM'),1,d.unl)}${d.unl?'':f('bank0',T('bankM'),1)}<label class="w"><input type="checkbox" data-f="unl" style="width:22px;height:22px;vertical-align:middle" ${d.unl?'checked':''}> ${T('unl')}</label></div>
+<div class="ph"><b>${T('players')} <small>${d.sel.size}/8</small></b><button class="b2 sm" data-a="new" ${POOL.length>=8?'disabled':''}>${T('create')}</button></div><div class="chips">${chips()}</div>${Ads.slot('setup')}</div>
+<button class="b1" style="margin-top:10px" data-a="start">${T('startG')}</button>`;
+}
+function txView(tx){
+  const n=i=>esc(tx.names[i]),k=tx.legs.length,L=tx.legs;
+  const o={p2p:['#2f9bff',`${n(tx.a)} → ${n(tx.b)}`,L[0].amt,0],bank_in:['#19c2c2',`${T('bank')} → ${n(tx.b)}`,L[0].amt,0],bank_out:['#19c2c2',`${n(tx.a)} → ${T('bank')}`,-L[0].amt,0],
+  start:['#2ec27e',`${n(tx.b)}<br><small>${T('startTx')}</small>`,L[0].amt,0],
+  pay_all:['#a66bff',T('toN',{k,n:n(tx.a)}),-tx.per*k,1],col_all:['#ff8a3d',T('fromN',{k,n:n(tx.b)}),tx.per*k,1]}[tx.type];
+  return{c:o[0],title:o[1],amt:o[2],grp:o[3]};
+}
+function histH(){
+  const rows=[...S.tx].reverse().map(tx=>{
+    const v=txView(tx),d=new Date(tx.ts).toLocaleString('tr-TR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const dl=new Map();tx.legs.forEach(l=>{dl.set(l.from,(dl.get(l.from)||0)-l.amt);dl.set(l.to,(dl.get(l.to)||0)+l.amt)});
+    const open=expanded.has(tx.id);
+    return `<div class="h ${tx.undone?'u':''}" style="--k:${v.c}"><div class="in"><div class="t">${v.title}</div><div class="m">${d}${tx.undone?' · '+T('undone'):''}${v.grp?` · ${fmt(tx.per)} × ${tx.legs.length}`:''}</div>
+${v.grp&&open?`<div class="sub">${[...dl].map(([i,x])=>`<div><span>${esc(tx.names[i])}</span><b class="${x>0?'pos':'neg'}">${x>0?'+':''}${fmt(x)}</b></div>`).join('')}</div>`:''}
+${v.grp?`<button class="undo" data-a="exp" data-v="${tx.id}">${open?'▲':'▼'}</button> `:''}${tx.undone?'':`<button class="undo" data-a="undo" data-v="${tx.id}">${T('undo')}</button>`}</div><div class="a ${v.amt>0?'pos':'neg'}">${v.amt>0?'+':''}${fmt(v.amt)}</div></div>`;
+  }).join('');
+  return `<header><h1>${T('hist')}</h1><button class="ic" data-a="back" aria-label="Geri">✕</button></header><div class="body">${rows||`<div class="empty">${T('noTx')}</div>`}</div>`;
+}
+
+/* ===== Tutar diyaloğu ===== */
+let DLG=null;
+function amtDlg({head,rows,op,max,label}){
+  layer('#ov',`<div class="dlg"><h2>${head}</h2><div id="rows"></div><div class="lb">${label||T('amt')}</div><div id="amt" class="disp z">0</div><div class="kp">${['7','8','9','4','5','6','1','2','3','00','0','del'].map(k=>`<button data-a="key" data-v="${k}"${k==='del'?' aria-label="Sil"':''}>${k==='del'?'⌫':k}</button>`).join('')}</div><div id="msg" class="msg"></div><div class="btns"><button class="b2" data-a="close">${T('cancel')}</button><button id="okb" class="b1" data-a="confirm">${T('ok')}</button></div></div>`);
+  const inp={value:''},disp=$('#amt');
+  const upd=()=>{
+    const a=num(inp.value);inp.value=a?String(a):'';disp.textContent=a?fmt(a):'0';disp.classList.toggle('z',!a);$('#rows').innerHTML=rows(a);let m='',good=false,extra='';
+    if(!a)m=T('enter');else{const r=op(structuredClone(S),a);if(r.err){m=esc(errMsg(r,S));const mx=max&&max();if(mx>0&&a>mx)extra=`<br><button class="b2" style="min-height:44px" data-a="adj" data-v="${mx}">${fmt(mx)}</button>`}else good=true}
+    $('#msg').className='msg'+(good?' ok':'');$('#msg').innerHTML=good?'✓':m+extra;$('#okb').disabled=!good;
+  };
+  DLG={op,upd,inp};upd();
+}
+function drop(a,b){
+  if(b==='pay'||b==='col'){
+    const pay=b==='pay',k=S.players.length-1;
+    amtDlg({head:pay?T('payAll'):T('colAll'),label:T('perHead'),
+      rows:v=>`<p class="r"><span>${pay?T('payer'):T('recv')}</span><b>${esc(nmS(a))}</b></p><p class="r"><span>${T('cnt')}</span><b>${k}</b></p><p class="r"><span>${T('total')}</span><b>${fmt(v*k)}</b></p>`,
+      op:(st,v)=>pay?payEveryone(st,a,v):collectFromEveryone(st,a,v),
+      max:()=>pay?Math.floor(gp(S,a).bal/k):Math.min(...S.players.filter(p=>p.id!==a).map(p=>p.bal))});
+  }else amtDlg({head:`${esc(nmS(a))} → ${esc(nmS(b))}`,rows:()=>'',
+    op:(st,v)=>a===BANK?transferFromBank(st,b,v):b===BANK?transferToBank(st,a,v):transferMoney(st,a,b,v)});
+}
+function confirmDlg(msg,label,fn,no){
+  DLG2=fn;layer('#ov2',`<div class="dlg"><h2>${esc(msg)}</h2><div class="btns" style="margin-top:16px"><button class="b2" data-a="c2">${no||T('cancel')}</button><button class="b1" data-a="ok2">${label}</button></div></div>`);
+}
+let DLG2=null;
+
+/* ===== Sürükle-bırak ===== */
+let D=null,pend=null,lx=0,ly=0,ghost=null;
+const valid=(s,d)=>s===BANK?(d!==BANK&&d!=='pay'&&d!=='col'):d!==s;
+document.addEventListener('pointerdown',e=>{
+  if(view!=='main'||$('#ov').style.display==='flex')return;
+  const c=e.target.closest('[data-drag]');if(!c||e.target.closest('[data-a=pass]'))return;
+  lx=e.clientX;ly=e.clientY;pend={id:c.dataset.drag,c,x:lx,y:ly};
+  if(e.target.closest('.grip'))begin();else pend.t=setTimeout(begin,200);
+});
+function begin(){
+  if(!pend)return;clearTimeout(pend.t);D={id:pend.id,c:pend.c,tg:null};pend=null;
+  const nm=D.id===BANK?T('bank'):gp(S,D.id).name,bl=D.id===BANK?(S.set.unl?'∞':fmt(S.bank)):fmt(gp(S,D.id).bal);
+  D.c.classList.add('drag');document.body.classList.add('dg');
+  ghost=document.createElement('div');ghost.className='ghost';ghost.style.setProperty('--c',D.id===BANK?'#aab2c0':gp(S,D.id).color);
+  ghost.innerHTML=`${esc(nm)}<b>${bl}</b>`;document.body.appendChild(ghost);vib(15);mv();
+}
+function mv(){
+  ghost.style.transform=`translate(${lx-65}px,${ly-60}px)`;
+  const el=document.elementFromPoint(lx,ly),t=el&&el.closest('[data-drop]'),ok=t&&valid(D.id,t.dataset.drop)?t:null;
+  if(ok!==D.tg){D.tg&&D.tg.classList.remove('hot');ok&&ok.classList.add('hot');D.tg=ok;ok&&vib(8)}
+  if(ly<110)scrollBy(0,-14);else if(ly>innerHeight-190)scrollBy(0,14);
+}
+document.addEventListener('pointermove',e=>{lx=e.clientX;ly=e.clientY;if(pend&&Math.hypot(lx-pend.x,ly-pend.y)>10){clearTimeout(pend.t);pend=null}if(D)mv()});
+document.addEventListener('touchmove',e=>{if(D)e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+function endDrag(doDrop){
+  if(pend){clearTimeout(pend.t);pend=null}if(!D)return;
+  const tg=D.tg,id=D.id;D.c.classList.remove('drag');document.querySelectorAll('.hot').forEach(x=>x.classList.remove('hot'));
+  document.body.classList.remove('dg');ghost.remove();D=null;
+  if(doDrop&&tg)drop(id,tg.dataset.drop); // geçersiz bırakma: güvenle iptal
+}
+document.addEventListener('pointerup',()=>endDrag(true));
+document.addEventListener('pointercancel',()=>endDrag(false));
+
+/* ===== Ses (WebAudio ile üretilir; telifli kayıt yok). Yeni paket: PACKS'e ekleyin ===== */
+const PACKS={classic:{free:1,w:'triangle',pay:[1318,1760],group:[1318,1760,2093],start:[784,1047,1568],undo:[700,520],d:.09},
+digital:{free:1,w:'square',pay:[880,1320],group:[880,1100,1320],start:[660,990,1320],undo:[500,350],d:.07},
+minimal:{free:1,w:'sine',pay:[1000],group:[1000,1200],start:[900,1200],undo:[600],d:.1},
+casino:{w:'sawtooth',pay:[1568,1976,2349],group:[1568,1976,2349,3136],start:[1047,1319,1568,2093],undo:[800,500],d:.07},
+luxury:{w:'sine',pay:[1047,1568,2093],group:[1047,1319,1568,2093],start:[523,784,1047,1568],undo:[900,600],d:.13},
+retro:{w:'square',pay:[440,880],group:[440,660,880],start:[330,660,990],undo:[300,200],d:.1}};
+let OWNED=[];try{OWNED=JSON.parse(localStorage.getItem('kasa.owned'))||[]}catch(e){}
+const Store={owns:id=>!!PACKS[id].free||OWNED.includes(id),buy:async id=>false}; // satın alma sağlayıcısı buraya bağlanacak
+let SND={on:true,vol:.6,pack:'classic'};try{Object.assign(SND,JSON.parse(localStorage.getItem('kasa.snd')))}catch(e){}
+const saveSnd=()=>{try{localStorage.setItem('kasa.snd',JSON.stringify(SND))}catch(e){}};
+let AC=null;
+function play(kind,pid){
+  if(!SND.on&&!pid)return;const p=PACKS[pid||SND.pack]||PACKS.classic;
+  try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const t0=AC.currentTime;
+    (p[kind]||p.pay).forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain(),t=t0+i*p.d;o.type=p.w;o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(Math.max(.0002,.3*SND.vol),t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+p.d*3);
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+p.d*3+.05)})}catch(e){}
+}
+/* ===== Reklam yuvaları (oyun tahtasında yok). Sağlayıcı: Ads.provider=(el,yuva)=>{...} ===== */
+const Ads={provider:null,slot:p=>`<div class="ad" data-slot="${p}">${T('adLabel')}</div>`,mount(){if(this.provider)document.querySelectorAll('.ad').forEach(e=>this.provider(e,e.dataset.slot))}};
+const _render=render;render=function(){_render();Ads.mount()};
+/* ===== Kart üstü geri bildirim ===== */
+function flash(tx,rev){
+  const d=new Map();tx.legs.forEach(l=>{const f=rev?l.to:l.from,t=rev?l.from:l.to;d.set(f,(d.get(f)||0)-l.amt);d.set(t,(d.get(t)||0)+l.amt)});
+  d.forEach((v,id)=>{if(!v||(id===BANK&&S.set.unl))return;const c=document.querySelector(`[data-drop="${id}"]`);if(!c)return;
+    const e=document.createElement('span');e.className='fx '+(v>0?'pos':'neg');e.textContent=(v>0?'+':'−')+fmt(Math.abs(v));c.appendChild(e);setTimeout(()=>e.remove(),1700)});
+}
+const langSel=()=>`<select data-f="lang" style="width:auto" aria-label="${T('lang')}">${LANGS.map(([c,n])=>`<option value="${c}" ${c===LANG?'selected':''}>${n}</option>`).join('')}</select>`;
+function soundH(){return `<div class="dlg"><h2>${T('sound')}</h2><label><input type="checkbox" data-f="son" ${SND.on?'checked':''} style="width:22px;height:22px;vertical-align:middle"> ${T('soundOn')}</label><label>${T('vol')}<input type="range" data-f="vol" min="0" max="100" value="${Math.round(SND.vol*100)}"></label>
+<div class="pk">${Object.keys(PACKS).map(id=>`<div class="prow2 ${SND.pack===id?'on':''}"><button data-a="pk" data-v="${id}">${SND.pack===id?'✓ ':''}${T('pk_'+id)}${Store.owns(id)?'':` <small>🔒 ${T('premium')}</small>`}</button><button class="pv2" data-a="pvw" data-v="${id}" aria-label="${T('preview')}">▶</button></div>`).join('')}</div>${Ads.slot('settings')}<div class="btns" style="margin-top:14px"><button class="b1" data-a="close">${T('close')}</button></div></div>`}
+/* ===== Eylemler ===== */
+function hex(h,s,v){s/=100;v/=100;const f=n=>{const k=(n+h/60)%6;return Math.round(255*(v-v*s*Math.max(0,Math.min(k,4-k,1))))};return'#'+[f(5),f(3),f(1)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+let CP=null;const pv=()=>{const e=$('#pv');if(e)e.style.background=hex(CP.h,CP.s,CP.v)};
+function createDlg(){
+  CP={name:'',h:Math.floor(Math.random()*360),s:70,v:95};
+  layer('#ov2',`<div class="dlg"><h2>${T('newP')}</h2><label>${T('pname')}<input data-f="cpn" maxlength="14" autocomplete="off"></label><div class="pv" id="pv"></div>
+${[['h',T('hue'),360],['s',T('sat'),100],['v',T('val'),100]].map(([k,l,m])=>`<label>${l}<input type="range" data-f="cp${k}" min="0" max="${m}" value="${CP[k]}"></label>`).join('')}
+<div class="btns" style="margin-top:14px"><button class="b2" data-a="c2">${T('cancel')}</button><button class="b1" data-a="mk">${T('mkBtn')}</button></div></div>`);pv();
+}
+function sheetH(){return `<div class="dlg"><h2>${T('menu')}</h2><div class="ph" style="margin-top:0"><b>${T('players')} <small>${S.players.length}/8</small></b><button class="b2 sm" data-a="new" ${POOL.length>=8?'disabled':''}>${T('create')}</button></div><div class="chips">${chips()}</div><label>${T('lang')}${langSel().replace('width:auto','width:100%')}</label><button class="b2" style="width:100%;margin-top:10px" data-a="snd">🔊 ${T('sound')}</button><div class="btns" style="margin-top:12px"><button class="b2" data-a="newg">${T('newG')}</button><button class="b1" data-a="close">${T('close')}</button></div></div>`}
+function openSheet(){sheetFn=sheetH;layer('#ov',sheetH())}
+function initDraft(set,sel){const s=set||(LAST&&LAST.set)||{};draft={name:s.name||'',cur:s.cur||CURS[0][0],start:s.start||1500,pass:s.pass??200,bank0:s.bank0??50000,unl:!!s.unl,sel:new Set((sel||(LAST&&LAST.sel)||[]).filter(id=>POOL.some(p=>p.id===id)))}}
+function refresh(){if(sheetFn)layer('#ov',sheetFn());render()}
+function sumTx(tx){const n=tx.names,B=T('bank');const t={p2p:`${n[tx.a]} → ${n[tx.b]}`,bank_in:`${B} → ${n[tx.b]}`,bank_out:`${n[tx.a]} → ${B}`,start:`${n[tx.b]} · ${T('startTx')}`,pay_all:`${n[tx.a]} → ${T('payAll')}`,col_all:`${T('colAll')} → ${n[tx.b]}`}[tx.type],a=txView(tx).amt;return`✓ ${t}\n${a>0?'+':''}${fmt(a)}`}
+function act(a,v,b){
+  switch(a){
+    case'hist':view='hist';render();break;
+    case'back':view='main';render();break;
+    case'menu':openSheet();break;
+    case'close':closeOv();break;
+    case'hint':b.classList.add('nd');setTimeout(()=>b.classList.remove('nd'),350);break;
+    case'snd':sheetFn=soundH;layer('#ov',soundH());break;
+    case'pk':if(!Store.owns(v)){toast(T('locked'));play('pay',v);break}SND.pack=v;saveSnd();refresh();play('pay',v);break;
+    case'pvw':play('pay',v);break;
+    case'pass':{const r=passStart(S,v);if(r.err)return toast(errMsg(r,S));save();render();vib(20);flash(r.tx);play('start');break}
+    case'undo':{const r=undoTransaction(S,v);if(r.err)return toast(errMsg(r,S));save();vib(20);render();flash(r.tx,1);play('undo');break}
+    case'exp':expanded.has(v)?expanded.delete(v):expanded.add(v);render();break;
+    case'confirm':{const r=DLG.op(S,num(DLG.inp.value));if(r.err)return DLG.upd();save();closeOv();render();vib(25);flash(r.tx);play(/_all$/.test(r.tx.type)?'group':'pay');break}
+    case'key':{let x=DLG.inp.value;x=v==='del'?x.slice(0,-1):(x+v).replace(/^0+/,'').slice(0,9);DLG.inp.value=x;DLG.upd();vib(5);break}
+    case'adj':DLG.inp.value=v;DLG.upd();break;
+    case'new':if(POOL.length>=8)return toast(T('max'));createDlg();break;
+    case'mk':{
+      const n=CP.name.trim();
+      if(!n)return toast(T('emptyName'));
+      if(POOL.some(p=>p.name.toLowerCase()===n.toLowerCase()))return toast(T('dupName'));
+      if(POOL.length>=8)return toast(T('max'));
+      POOL.push({id:uid(),name:n,color:hex(CP.h,CP.s,CP.v)});savePool();layer('#ov2','');refresh();break}
+    case'tog':{
+      if(view==='setup'){
+        if(draft.sel.has(v))draft.sel.delete(v);else{if(draft.sel.size>=8)return toast(T('max'));draft.sel.add(v)}
+        render();break}
+      const p=S.players.find(x=>x.id===v);
+      if(!p){if(S.players.length>=8)return toast(T('max'));const q=POOL.find(x=>x.id===v);S.players.push({id:q.id,name:q.name,color:q.color,bal:S.set.start});save();refresh();break}
+      if(S.players.length<=2)return toast(T('min2'));
+      confirmDlg(T('leave',{n:p.name}),T('del'),()=>{
+        if(p.bal>0){const r=transferToBank(S,p.id,p.bal);if(r.err)return toast(errMsg(r,S))}
+        S.players=S.players.filter(x=>x.id!==v);save();refresh()});break}
+    case'dp':{const p=POOL.find(x=>x.id===v);
+      confirmDlg(T('delPool',{n:p.name}),T('del'),()=>{POOL=POOL.filter(x=>x.id!==v);draft.sel.delete(v);savePool();refresh()});break}
+    case'c2':layer('#ov2','');break;
+    case'ok2':{const f=DLG2;layer('#ov2','');f&&f();break}
+    case'newg':confirmDlg(T('newMsg'),T('newG'),()=>{ // havuz silinmez; yalnızca oyun sıfırlanır
+      initDraft(S.set,S.players.map(p=>p.id));S=null;try{localStorage.removeItem(KEY)}catch(e){}closeOv();prevBal={};expanded.clear();view='setup';render()});break;
+    case'start':{
+      const d=draft;if(d.sel.size<2)return toast(T('min2'));
+      const ps=POOL.filter(p=>d.sel.has(p.id)).slice(0,8),st=num(d.start);
+      S={set:{name:d.name.trim(),cur:d.cur||CURS[0][0],start:st,pass:num(d.pass),unl:d.unl,bank0:num(d.bank0)},bank:num(d.bank0),players:ps.map(p=>({id:p.id,name:p.name,color:p.color,bal:st})),tx:[]};
+      LAST={sel:ps.map(p=>p.id),set:S.set};savePool();save();view='main';prevBal={};render();break}
+  }
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)act(b.dataset.a,b.dataset.v,b);else if(e.target.id==='ov'&&!DLG2)closeOv()});
+document.addEventListener('input',e=>{
+  const t=e.target,f=t.dataset.f;if(!f)return;
+  if(f==='cpn')CP.name=t.value;else if(f.startsWith('cp')){CP[f[2]]=+t.value;pv()}
+  else if(f==='unl'){draft.unl=t.checked;render()}
+  else if(f==='lang'){LANG=t.value;try{localStorage.setItem('kasa.lang',LANG)}catch(e){}document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';refresh()}
+  else if(f==='son'){SND.on=t.checked;saveSnd()}else if(f==='vol'){SND.vol=t.value/100;saveSnd()}
+  else if(view==='setup'&&f in draft)draft[f]=t.value;
+});
+/* ===== Geri tuşu / kenar kaydırma ===== */
+let quit=false;try{history.pushState({k:1},'')}catch(e){}
+addEventListener('popstate',()=>{
+  if(quit)return;try{history.pushState({k:1},'')}catch(e){}
+  if(D)return;
+  if($('#ov2').style.display==='flex')return layer('#ov2','');
+  if($('#ov').style.display==='flex')return closeOv();
+  if(view==='hist'){view='main';return render()}
+  confirmDlg(T('exitQ'),T('yes'),()=>{quit=true;history.go(-1);setTimeout(()=>{try{window.close()}catch(e){}},200)},T('no'));
+});
+if(location.hash==='#test')console.log('Testler',selfTest());
+initDraft(S&&S.set,S&&S.players.map(p=>p.id));
+render();
+</script></body></html>
