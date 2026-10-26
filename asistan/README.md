@@ -15,8 +15,7 @@ Sohbet eder, kod yazar ve hata ayıklar, dosyalarında çalışabilir.
 
 ```bash
 pkg install -y python curl tar git            # Termux
-git clone -b arena/64436ca2-kasa-masa-oyunu \
-  https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git && cd KASA-MASA-OYUNU
+git clone https://github.com/oyunlitee-cell/kasa-asistan.git && cd kasa-asistan
 bash asistan/android/kur.sh                   # llama.cpp ikilisi + Gemma 4 + doğrulama
 bash asistan/android/baslat.sh                # tarayıcı açılır: 127.0.0.1:8080
 ```

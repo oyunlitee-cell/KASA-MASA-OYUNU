@@ -19,27 +19,25 @@ pip ile C++ derlemek Termux'ta 15-30 dakika sürer ve sık sık patlar; bu yol o
 
 ---
 
-## Adım 0 — Kodu telefona getir (önce bu)
+## Adım 0 — Kodu telefona getir
 
-Kod henüz yayınlanmadı (PR #1 onay bekliyor). İki seçenek:
+Kod, **herkese açık** bir depoda duruyor — telefonda GitHub şifresi/token gerekmez:
 
-**A. Onay ver, sonra klonla** *(en kolay, önerilen)*
-"PR'ı push et" dediğinde kod `arena/64436ca2-kasa-masa-oyunu` dalına gider. Sonra telefonda:
-
-```bash
-pkg install -y git
-git clone -b arena/64436ca2-kasa-masa-oyunu \
-  https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git
-cd KASA-MASA-OYUNU
+```
+https://github.com/oyunlitee-cell/kasa-asistan
 ```
 
-**B. Onay beklemeden denemek istiyorsan**
-Dosyaları telefondan tek tek elle oluşturmak pratik değil. Bu durumda sadece
-`asistan/android/` altındaki 4 betiği (`kur.sh`, `baslat.sh`, `durdur.sh`,
-`kontrol.sh`) ve `asistan/` klasörünün geri kalanını bir dosya yöneticisiyle
-(Google Drive / USB) telefona kopyala. Klasör yapısı korunmalı.
+```bash
+git clone https://github.com/oyunlitee-cell/kasa-asistan.git
+cd kasa-asistan
+```
 
----
+Herkese açık olduğunu doğrulamak istersen: telefonun tarayıcısında **gizli sekmede**
+(Chrome → ⋮ → Yeni gizli sekme) yukarıdaki adresi aç. Sayfa açılıyorsa şifresiz
+erişim çalışıyor demektir. Giriş ekranı çıkarsa bana haber ver.
+
+> Bu depo bir **ayna**: yalnızca `asistan/` klasörünü içerir. Asıl depo
+> (`KASA-MASA-OYUNU`) özel kalır. Aynada hiçbir anahtar/şifre yoktur.
 
 ## Adım 1 — Termux kur (10 dk, bir kez)
 
