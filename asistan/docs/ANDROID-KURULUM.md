@@ -85,8 +85,8 @@ Tam adım adım anlatım: **[ANDROID-TELEFON.md](ANDROID-TELEFON.md)**. Özeti:
 pkg update -y && pkg install -y python curl tar git
 
 # 2) Kodu al
-git clone https://github.com/oyunlitee-cell/kasa-asistan.git
-cd kasa-asistan
+git clone https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git
+cd KASA-MASA-OYUNU
 
 # 3) Tek komut: llama.cpp ikilisi + model + doğrulama
 bash asistan/android/kur.sh          # 8 GB+ RAM

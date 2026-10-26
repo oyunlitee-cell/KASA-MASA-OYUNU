@@ -19,25 +19,38 @@ pip ile C++ derlemek Termux'ta 15-30 dakika sürer ve sık sık patlar; bu yol o
 
 ---
 
-## Adım 0 — Kodu telefona getir
+## Adım 0 — Depoyu herkese açık yap (tek seferlik, 30 saniye)
 
-Kod, **herkese açık** bir depoda duruyor — telefonda GitHub şifresi/token gerekmez:
+Depo şu an **özel**, bu yüzden telefondan klonlarken şifre ister. Şifre bilmene
+gerek yok — görünürlüğü telefondan değiştirebilirsin:
 
-```
-https://github.com/oyunlitee-cell/kasa-asistan
-```
+1. Telefon tarayıcısında **github.com/oyunlitee-cell/KASA-MASA-OYUNU** adresini aç
+   (zaten giriş yapmış olman yeterli, şifre sorulmaz).
+2. **Settings** (Ayarlar) → en altta **Danger Zone**.
+3. **Change repository visibility** → **Change to public** → onay için depo adını
+   (`oyunlitee-cell/KASA-MASA-OYUNU`) yaz → onayla.
+
+Bu, depodaki **oyun dosyasını da herkese açık** yapar (içinde gizli bilgi yok —
+kontrol edildi). Oyunun özel kalmasını istiyorsan bana söyle, ayrı bir herkese açık
+depoya sadece `asistan/` klasörünü ayna olarak koyayım.
+
+**Doğrula** (Termux'ta, Adım 1'den sonra):
 
 ```bash
-git clone https://github.com/oyunlitee-cell/kasa-asistan.git
-cd kasa-asistan
+git ls-remote https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git HEAD
 ```
 
-Herkese açık olduğunu doğrulamak istersen: telefonun tarayıcısında **gizli sekmede**
-(Chrome → ⋮ → Yeni gizli sekme) yukarıdaki adresi aç. Sayfa açılıyorsa şifresiz
-erişim çalışıyor demektir. Giriş ekranı çıkarsa bana haber ver.
+* Bir commit özeti dönerse → herkese açık, devam et.
+* Şifre/kullanıcı adı sorarsa → depo hâlâ özel. İki seçenek:
+  * Görünürlüğü yukarıdaki gibi değiştir, **veya**
+  * Şifresiz giriş (cihaz kodu yöntemi, tarayıcıda oturum açıksa şifre gerekmez):
+    ```bash
+    pkg install -y gh
+    gh auth login          # GitHub.com → HTTPS → "Login with a web browser"
+    ```
+    Ekrandaki 8 haneli kodu tarayıcıda gir, yetkilendir. Sonra `git clone` çalışır.
 
-> Bu depo bir **ayna**: yalnızca `asistan/` klasörünü içerir. Asıl depo
-> (`KASA-MASA-OYUNU`) özel kalır. Aynada hiçbir anahtar/şifre yoktur.
+## Adım 0b — Kodu telefona getir
 
 ## Adım 1 — Termux kur (10 dk, bir kez)
 
