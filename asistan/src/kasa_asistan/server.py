@@ -81,7 +81,10 @@ def isleyici_olustur(sunucu: Sunucu):
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache")
-            self.send_header("Connection", "keep-alive")
+            # Kapatmayı kendimiz yönetiyoruz: yarıda kesilen akış bağlantıyı
+            # yeniden kullanıma bırakırsa protokol karışır.
+            self.send_header("Connection", "close")
+            self.close_connection = True
             self._cors()
             self.end_headers()
             try:
@@ -102,6 +105,16 @@ def isleyici_olustur(sunucu: Sunucu):
                 self.wfile.flush()
             except (BrokenPipeError, ConnectionResetError):
                 pass
+            finally:
+                # Kullanıcı sekmeyi kapattıysa üreteç yarıda kalır. Kapatmazsak
+                # `with self.kilit` bloğu açık kalır ve SONRAKİ istek sonsuza
+                # kadar bekler.
+                kapat = getattr(olaylar, "close", None)
+                if kapat is not None:
+                    try:
+                        kapat()
+                    except (BrokenPipeError, ConnectionResetError, RuntimeError):
+                        pass
 
         def _govde(self) -> dict:
             uzunluk = int(self.headers.get("Content-Length") or 0)
@@ -211,12 +224,21 @@ def isleyici_olustur(sunucu: Sunucu):
 
 
 def calistir(host: str = "0.0.0.0", port: int = 8080, model: str | None = None,
-             araclar: bool = True, yapilandirma: str | None = None) -> None:
-    asistan = Asistan(
-        ayarlar=ayarlari_yukle(yapilandirma),
-        model_anahtari=model,
-        araclar_acik=araclar,
-    )
+             araclar: bool = True, yapilandirma: str | None = None,
+             demo_izin: bool = True) -> None:
+    try:
+        asistan = Asistan(
+            ayarlar=ayarlari_yukle(yapilandirma),
+            model_anahtari=model,
+            araclar_acik=araclar,
+            demo_izin=demo_izin,
+        )
+    except Exception as e:  # noqa: BLE001
+        from .backends import ArkaUcHatasi
+        if isinstance(e, ArkaUcHatasi):
+            print("\n" + str(e) + "\n")
+            raise SystemExit(2) from e
+        raise
     sunucu = Sunucu(asistan)
     httpd = ThreadingHTTPServer((host, port), isleyici_olustur(sunucu))
     d = asistan.durum()
@@ -225,7 +247,9 @@ def calistir(host: str = "0.0.0.0", port: int = 8080, model: str | None = None,
     print(f"  Model    : {d['etiket']}  [{d['model']}]  · lisans {d['lisans']}")
     print(f"  Arka uç  : {d['arka_uc']}  · gerçek model: {d['gercek_model']}")
     if not d["gercek_model"]:
-        print("  ⚠  DEMO modu — models/ klasörüne bir model koyun.")
+        print("  ⚠  DEMO modu — gerçek model yok (hazır yanıtlar).")
+        print("     Android: bash asistan/android/baslat.sh")
+        print("     Masaüstü: bash asistan/modeller/indir.sh")
     print(f"  Arayüz   : http://localhost:{port}/")
     print(f"  OpenAI   : http://localhost:{port}/v1/chat/completions")
     print("─" * 62)
@@ -242,10 +266,13 @@ def ana() -> None:
     p.add_argument("--port", type=int, default=8080)
     p.add_argument("--model", default=None, help="asistan.yaml içindeki model anahtarı")
     p.add_argument("--arac-kapali", action="store_true", help="dosya/komut araçlarını kapat")
+    p.add_argument("--demo-yok", action="store_true",
+                   help="gerçek model yoksa başlatmayı reddet (demo kapalı)")
     p.add_argument("--yapilandirma", default=None)
     a = p.parse_args()
     calistir(host=a.host, port=a.port, model=a.model,
-             araclar=not a.arac_kapali, yapilandirma=a.yapilandirma)
+             araclar=not a.arac_kapali, yapilandirma=a.yapilandirma,
+             demo_izin=not a.demo_yok)
 
 
 if __name__ == "__main__":

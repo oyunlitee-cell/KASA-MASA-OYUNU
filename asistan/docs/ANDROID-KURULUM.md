@@ -1,15 +1,23 @@
 # Android'de KASA Asistan — Kurulum
 
-Seçilen model: **Gemma 4 E4B** (Apache 2.0) · Motor: **Google AI Edge LiteRT-LM**
-E2B (2.58 GB) daha zayıf telefonlar için, E4B (3.65 GB) normal telefonlar için.
+> ### 👉 Bilgisayarın yoksa **[ANDROID-TELEFON.md](ANDROID-TELEFON.md)** dosyasını kullan.
+> O kılavuz tamamen telefonla yapılır: Termux + llama.cpp resmî Android ikilisi +
+> Gemma 4 GGUF, **derleme yok**, ~25 dakika.
 
-Telefonda üç farklı yol var. Aşağıdan kendine uygun olanı seç.
+Seçilen model: **Gemma 4 E4B** (Apache 2.0). Telefonda iki motor seçeneği var:
 
-| Yol | Zorluk | Ne elde edersin |
+| Motor | Ne zaman | Derleme |
 |---|---|---|
-| **A. Hazır uygulama** | ⭐ | 10 dakikada çalışan sohbet. Kod yok. |
-| **B. Termux + bu depo** | ⭐⭐ | Python asistanı, araçlar, kendi sunucun, tam kontrol |
-| **C. Kendi Android uygulaman (Kotlin)** | ⭐⭐⭐⭐ | LiteRT-LM SDK ile gerçek bir APK |
+| **llama.cpp resmî Android ikilisi** (`llama-server`) | **Önerilen** — her Android'de | ❌ yok |
+| Google AI Edge **LiteRT-LM** | GPU/NPU hızlandırma, hazır uygulama | ❌ yok |
+
+Bu dosya üç yolu anlatır. Bilgisayarsız olan **Yol B**'dir.
+
+| Yol | Bilgisayar gerekir? | Ne elde edersin |
+|---|---|---|
+| **A. Hazır uygulama (LiteRT)** | ❌ hayır | 10 dakikada çalışan sohbet; KASA'nın araçları yok |
+| **B. Termux + bu depo** ⭐ | ❌ hayır | Tam KASA: araçlar, hafıza, arayüz — **önerilen** |
+| **C. Kendi Android uygulaman (Kotlin)** | ✅ evet (Android Studio) | Dağıtılabilir APK |
 
 ---
 
@@ -68,61 +76,57 @@ ile yeniden üretebilirsin.
 
 ---
 
-## B. Termux + bu depo (tam KASA)
+## B. Termux + bu depo (tam KASA) — bilgisayar GEREKMEZ
 
-Telefonda Python, araçlar, sunucu ve tarayıcı arayüzü. **Tavsiye edilen yol.**
+Tam adım adım anlatım: **[ANDROID-TELEFON.md](ANDROID-TELEFON.md)**. Özeti:
 
 ```bash
-# 1) Termux kur (F-Droid sürümü önerilir; Play Store sürümü eski)
-#    https://f-droid.org/packages/com.termux/
+# 1) Termux (F-Droid sürümü!)
+pkg update -y && pkg install -y python curl tar git
 
-pkg update && pkg upgrade -y
-pkg install -y git python cmake clang make curl
-
-# 2) Depoyu al
-git clone https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git
+# 2) Kodu al
+git clone -b arena/64436ca2-kasa-masa-oyunu \
+  https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git
 cd KASA-MASA-OYUNU
 
-# 3) Python paketi
-python -m pip install llama-cpp-python
-#    Derleme 10-25 dk sürer (telefonda normal). Hata alırsan:
-#    CMAKE_ARGS="-DGGML_OPENMP=OFF" python -m pip install llama-cpp-python
+# 3) Tek komut: llama.cpp ikilisi + model + doğrulama
+bash asistan/android/kur.sh          # 8 GB+ RAM
+bash asistan/android/kur.sh e2b      # 4-6 GB RAM
 
-# 4) Modeli indir (Wi-Fi'de yap, ~5.2 GB)
-bash asistan/modeller/indir.sh
-
-# 5) Çalıştır
-cd asistan
-PYTHONPATH=src python -m kasa_asistan.cli
+# 4) Kontrol ve başlat
+bash asistan/android/kontrol.sh
+bash asistan/android/baslat.sh       # http://127.0.0.1:8080
 ```
+
+**Neden `pip install llama-cpp-python` yok?** Telefonda C++ derlemek 15-30 dakika
+sürer ve sık başarısız olur. Bunun yerine llama.cpp'nin **resmî Android arm64
+ikilisi** (77 MB) indirilir; modeli o yükler, Python tarafı saf standart kütüphane kalır.
+Derleme yolu hâlâ mümkün (yedek): `pkg install cmake clang && pip install llama-cpp-python`
+— llama-cpp-python 0.3.36'nın içindeki llama.cpp `gemma4` mimarisini destekliyor,
+ama bu yol yavaş ve kırılgandır.
 
 ### Arayüzü telefonda açmak
 
+`baslat.sh` bunu kendisi yapar ve tarayıcıyı açar: **http://127.0.0.1:8080**
+
+Aynı Wi-Fi'deki başka cihazdan açmak için `baslat.sh` yerine elle:
 ```bash
-cd asistan
-PYTHONPATH=src python -m kasa_asistan.cli --sunucu --port 8080
+KASA_LLAMA_SUNUCU=http://127.0.0.1:8081 PYTHONPATH=src \
+  python3 -m kasa_asistan.cli --sunucu --host 0.0.0.0 --port 8080
 ```
-
-Sonra telefonun tarayıcısında: **http://localhost:8080**
-
-Aynı Wi-Fi'deki bilgisayardan açmak için `asistan.yaml` → `sunucu.paylas_ag: true`
-ve telefonun IP'si (`ifconfig` veya `ip addr`) ile `http://192.168.x.x:8080`.
+(Güvenlik: `baslat.sh` her zaman `--host 127.0.0.1` kullanır — telefonda arayüz
+LAN'a açılmaz. Bilinçli olarak açmak istiyorsan `--host 0.0.0.0` ver.)
 
 ### Termux'ta bilinmesi gerekenler
 
-* **Pil optimizasyonu:** Termux'u "pil optimizasyondan muaf" tut, yoksa
-  arka planda ölür: Ayarlar → Uygulamalar → Termux → Pil → Kısıtlanmamış.
-* **Isınma:** 4B model CPU'da 20-30 dakika sonra telefonu ısıtır. Uzun
-  sohbetlerde `--model gemma4-e2b` daha konforlu.
-* **RAM:** 6 GB'lık telefondaysan E2B kullan; E4B bellek yetersizliğinden
-  Android tarafından öldürülebilir.
-* **Hız beklentisi:** 8 çekirdekli orta seviye bir telefonda GGUF Q4 ile
-  gerçekçi olarak **4-10 token/s**. Yani bir paragraf ~15-40 saniye.
-  LiteRT-LM (A yolu) GPU/NPU kullandığı için belirgin şekilde daha hızlı.
-
----
+* **Pil optimizasyonu:** Ayarlar → Uygulamalar → Termux → Pil → Kısıtlanmamış.
+* **Isınma:** 10-15 dakika sonra ısınır; kılıfı çıkar, şarjda kullanma.
+* **RAM:** 6 GB ve altındaysan E2B kullan.
+* **Hız beklentisi:** CPU'da gerçekçi **3-8 token/s**. Bir paragraf ~20-40 sn.
 
 ## C. Kendi Android uygulaman (Kotlin + LiteRT-LM)
+
+> ⚠️ Bu yol **bilgisayar** (Android Studio) gerektirir. Telefon-only hedefi için B'yi kullan.
 
 Dağıtılabilir bir APK istiyorsan doğru yol bu. Android Studio **Quail 4**
 (Eylül 2026) Gemma 4'ü yerleşik olarak destekliyor.
@@ -207,9 +211,9 @@ yazılı sohbetle başlamanı öneririm.
 
 ## Hangi yolu seçmeli?
 
-* **Sadece çalışsın istiyorum** → A
-* **KASA'nın kişiliği, araçları, kendi sunucum olsun** → B
-* **Başkasına kurulabilir bir uygulama yapıyorum** → C
+* **Sadece çalışsın istiyorum, kod yok** → A
+* **KASA'nın kişiliği ve araçları olsun, bilgisayar kullanmayayım** → **B** ⭐
+* **Başkasına kurulabilir bir APK yapıyorum (bilgisayarım var)** → C
 
 ---
 

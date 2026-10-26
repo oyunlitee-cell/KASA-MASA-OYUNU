@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -93,6 +94,12 @@ class SahteArkaUc(ArkaUc):
     def uret(self, mesajlar, akis=False, **kw):
         self.gorulen.append(list(mesajlar))
         return self.yanitlar.pop(0)
+
+    def uret_stream(self, mesajlar, **kw):
+        self.gorulen.append(list(mesajlar))
+        metin = self.yanitlar.pop(0)
+        for parca in re.findall(r"\S+\s*", metin):
+            yield parca
 
 
 def _ajan(arka_uc, tmp_path):

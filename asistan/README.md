@@ -3,13 +3,27 @@
 Türkçe konuşan, **tamamen çevrimdışı** çalışan kişisel yapay zekâ asistanı.
 Sohbet eder, kod yazar ve hata ayıklar, dosyalarında çalışabilir.
 
-**Seçilen model: Gemma 4 E4B · Apache 2.0 · 3.65 GB · 128K bağlam**
-→ Seçim gerekçesi, karşılaştırma ve sınırlar: **[docs/MODEL-SECIMI.md](docs/MODEL-SECIMI.md)**
-→ Telefonda kurulum: **[docs/ANDROID-KURULUM.md](docs/ANDROID-KURULUM.md)**
+**Seçilen model: Gemma 4 E4B · Apache 2.0 · 128K bağlam**
+
+📱 **Telefonda, bilgisayarsız kurulum: [docs/ANDROID-TELEFON.md](docs/ANDROID-TELEFON.md)**
+(3 komut: `kur.sh` → `kontrol.sh` → `baslat.sh`, derleme yok)
+→ Model seçim gerekçesi ve sınırlar: [docs/MODEL-SECIMI.md](docs/MODEL-SECIMI.md)
 
 ---
 
-## 60 saniyede dene
+## 📱 Telefonda (önerilen)
+
+```bash
+pkg install -y python curl tar git            # Termux
+git clone -b arena/64436ca2-kasa-masa-oyunu \
+  https://github.com/oyunlitee-cell/KASA-MASA-OYUNU.git && cd KASA-MASA-OYUNU
+bash asistan/android/kur.sh                   # llama.cpp ikilisi + Gemma 4 + doğrulama
+bash asistan/android/baslat.sh                # tarayıcı açılır: 127.0.0.1:8080
+```
+
+Ayrıntı: **[docs/ANDROID-TELEFON.md](docs/ANDROID-TELEFON.md)** · Derleme yok, bilgisayar yok.
+
+## Masaüstünde dene
 
 Model olmadan da arayüz çalışır (demo yanıtlarıyla):
 
@@ -37,6 +51,8 @@ böylece Termux'ta sorunsuz kurulur.
 
 | | |
 |---|---|
+| 📱 **Telefonda çalışır** | llama.cpp resmî Android ikilisi + Gemma 4; derleme gerekmez |
+| ⚡ **Gerçek akış** | Token token yazma — 5 tok/s'de bile ilk kelime ~1 sn'de görünür |
 | 💬 **Türkçe sohbet** | Doğal, çeviri kokmayan Türkçe; kullanıcının diline uyar |
 | 🧑‍💻 **Kod yazma** | Tam dosya üretir, "...devamı" demez; LiveCodeBench v6 = 52.0 (4B sınıfının en iyisi) |
 | 🐛 **Hata ayıklama** | Hatanın sebebini söyler, düzeltilmiş kodu verir |
@@ -115,8 +131,11 @@ oranı, İngilizce kalıp kaçağı, kod bloğu üretimi ve yanıt süresini rap
 ## Test
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests -q      # 12 test
+PYTHONPATH=src python3 -m pytest tests -q      # 22 test
 ```
+
+Araç `tests/test_llama_server.py` gerçek bir HTTP sunucusu ayağa kaldırıp
+llama-server istemcisini, akışı ve araç döngüsünü soket üzerinden doğrular.
 
 ## Yapı
 
@@ -132,12 +151,18 @@ asistan/
 │   ├── server.py             # HTTP sunucusu (stdlib) + OpenAI uç noktası
 │   └── cli.py                # terminal arayüzü
 ├── web/index.html            # Türkçe sohbet arayüzü (tek dosya, bağımlılıksız)
-├── modeller/indir.sh         # model indirici
+├── android/
+│   ├── kur.sh                # telefonda tek komut kurulum (llama.cpp + model + test)
+│   ├── baslat.sh             # llama-server + arayüz + tarayıcı
+│   ├── durdur.sh             # süreçleri kapat
+│   └── kontrol.sh            # 6 başlıkta sağlık kontrolü
+├── modeller/indir.sh         # model indirici (masaüstü)
 ├── eval/turkce_degerlendir.py# Türkçe kalite ölçümü
 ├── tests/test_smoke.py       # 12 test
 └── docs/
     ├── MODEL-SECIMI.md       # model karşılaştırma raporu + kaynaklar
-    └── ANDROID-KURULUM.md    # telefonda kurulum (3 yol)
+    ├── ANDROID-TELEFON.md    # ⭐ bilgisayarsız kurulum
+    └── ANDROID-KURULUM.md    # üç kurulum yolu (LiteRT / Termux / Kotlin)
 ```
 
 ## Güvenlik
@@ -160,6 +185,8 @@ Ayrıntılı liste: [docs/MODEL-SECIMI.md §7](docs/MODEL-SECIMI.md). Kısaca:
   (GPU/NPU) yolunu kullan — bkz. Android kılavuzu.
 * Türkçe kalitesi bu repoda ölçülmedi; `eval/` ile kendin ölçmelisin.
 * Sesli giriş/çıkış henüz yok (model ses girdisini destekliyor, arayüz yok).
+* Telefonda ölçülen hız cihaza göre **3-8 token/s**; bu bir "hızlı sohbet" değil,
+  "cebinde çalışan" bir asistan. Beklentiyi buna göre kur.
 
 ## Lisans
 

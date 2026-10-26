@@ -35,6 +35,7 @@ class Asistan:
     ayarlar: Ayarlar
     model_anahtari: str | None = None
     araclar_acik: bool = True
+    demo_izin: bool = True
     az_tur: int = 3                     # araç döngüsü tur limiti
     gecmis: list[Mesaj] = field(default_factory=list)
     kisilik: Kisilik | None = None
@@ -45,7 +46,8 @@ class Asistan:
 
     # ------------------------------------------------------------------ kurulum
     def __post_init__(self) -> None:
-        self.arka_uc, self.profil = arka_uc_kur(self.ayarlar, self.model_anahtari)
+        self.arka_uc, self.profil = arka_uc_kur(
+            self.ayarlar, self.model_anahtari, demo_izin=self.demo_izin)
         p = self.ayarlar.profil
         self.kisilik = Kisilik(
             profil=Profil(
@@ -111,38 +113,77 @@ class Asistan:
         }
 
     def yanit(self, kullanici_metni: str) -> str:
-        """Araç döngüsü dahil tam yanıt (akışsız)."""
-        self.gecmis.append(Mesaj("user", kullanici_metni))
-        assert self.arka_uc is not None
-        mesajlar = self.mesajlar(kullanici_metni)
-        ham = self.arka_uc.uret(mesajlar, **self._ornekleme())
-        metin = ham.metin if isinstance(ham, Uretilen) else str(ham)
-        self.istatistik["son_token"] = getattr(ham, "token_sayisi", 0)
-        self.istatistik["son_hiz"] = round(getattr(ham, "token_hizi", 0.0), 1)
-
-        if not (self.araclar_acik and self.arac_kutusu):
-            self.gecmis.append(Mesaj("assistant", metin))
-            return metin
-
-        for _ in range(self.az_tur):
-            cagri, temiz = arac_cagrisi_ayikla(metin)
-            if not cagri:
-                metin = temiz
-                break
-            sonuc = self.arac_kutusu.cagir(cagri["arac"], cagri.get("argumanlar") or {})
-            mesajlar.append({"role": "assistant", "content": metin})
-            mesajlar.append({"role": "user", "content": f"ARAC SONUCU ({cagri['arac']}):\n{sonuc}"})
-            ham = self.arka_uc.uret(mesajlar, **self._ornekleme())
-            metin = ham.metin if isinstance(ham, Uretilen) else str(ham)
-
-        self.gecmis.append(Mesaj("assistant", metin))
-        return metin
+        """Araç döngüsü dahil tam yanıt (akışı birleştirir)."""
+        return "".join(self.yanit_akis(kullanici_metni))
 
     def yanit_akis(self, kullanici_metni: str) -> Iterator[str]:
-        """Token token akış. Araç gerekiyorsa akışsız yola düşer (nadirdir)."""
-        tam = self.yanit(kullanici_metni)
-        for parca in re.findall(r"\S+\s*", tam):
-            yield parca
+        """Gerçek token akışı + araç döngüsü.
+
+        Telefonda üretim 5-10 token/s olduğu için akış şart: kullanıcı ilk
+        kelimeyi ~1 saniyede görür, tüm yanıtı beklemez.
+
+        Araç çağrısı (```tool ...```) ekrana basılmaz: son 12 karakter
+        bekletilir, çit başladığı an akış susturulur, araç çalıştırılır,
+        ardından modelin devam yanıtı yeniden akıtılır.
+        """
+        assert self.arka_uc is not None
+        # ÖNEMLİ: mesajlar() geçmişi + yeni mesajı birleştirir; append sonra yapılmalı,
+        # yoksa kullanıcı mesajı istemde iki kez görünür.
+        mesajlar = self.mesajlar(kullanici_metni)
+        self.gecmis.append(Mesaj("user", kullanici_metni))
+        parametreler = self._ornekleme()
+        arac_modu = bool(self.araclar_acik and self.arac_kutusu)
+        basla = time.time()
+        toplam_parca = 0
+
+        for _tur in range(self.az_tur + 1):
+            parcalar: list[str] = []
+            gosterilen = 0
+            cit_goruldu = False
+
+            for parca in self.arka_uc.uret_stream(mesajlar, **parametreler):
+                parcalar.append(parca)
+                toplam_parca += 1
+                biriken = "".join(parcalar)
+                if arac_modu and "```tool" in biriken:
+                    cit_goruldu = True
+                if cit_goruldu:
+                    continue
+                guvenli = len(biriken) - 12          # çit başlangıcını kaçırma
+                if guvenli > gosterilen:
+                    yield biriken[gosterilen:guvenli]
+                    gosterilen = guvenli
+
+            biriken = "".join(parcalar)
+            if not cit_goruldu and len(biriken) > gosterilen:
+                yield biriken[gosterilen:]
+
+            cagri, temiz = (arac_cagrisi_ayikla(biriken) if arac_modu else (None, biriken))
+            if not cagri:
+                self.gecmis.append(Mesaj("assistant", temiz or biriken))
+                sure = time.time() - basla
+                # Demo arka ucu anında yanıt verdiği için "46538 token/s" gibi
+                # anlamsız değerler üretiyordu; hızı sadece gerçek modelde bildir.
+                gercek = bool(self.arka_uc and self.arka_uc.gercek)
+                self.istatistik.update({
+                    "son_token": toplam_parca if gercek else 0,
+                    "son_hiz": round(toplam_parca / sure, 1) if (gercek and sure > 0.2) else 0.0,
+                })
+                return
+
+            assert self.arac_kutusu is not None
+            yield f"\n\n⚙ {cagri['arac']} çalıştırılıyor…\n"
+            sonuc = self.arac_kutusu.cagir(cagri["arac"], cagri.get("argumanlar") or {})
+            mesajlar.append({"role": "assistant", "content": biriken})
+            mesajlar.append({
+                "role": "user",
+                "content": f"ARAC SONUCU ({cagri['arac']}):\n{sonuc}",
+            })
+
+        # araç turu tükendi
+        uyari = "\n\n(Araç turu sınırına ulaşıldı; sonuçlar yukarıda.)"
+        yield uyari
+        self.gecmis.append(Mesaj("assistant", uyari.strip()))
 
     # ------------------------------------------------------------------ geçmiş
     def kaydet(self, ad: str | None = None) -> Path:
@@ -166,6 +207,7 @@ class Asistan:
             "araclar": self.araclar_acik,
             "uyari": getattr(self.profil, "uyari", ""),
             "hafiza": self.hafiza_yolu.exists(),
+            "mod": "gercek" if bilgi.get("gercek_model") else "demo",
         })
         return bilgi
 

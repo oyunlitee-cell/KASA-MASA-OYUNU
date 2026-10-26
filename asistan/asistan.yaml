@@ -113,6 +113,10 @@ calisma:
   maks_yeni_token: 1024
   gpu_katmanlari: -1                # -1 = hepsi (llama.cpp ngl)
   is_parcacigi: 4
+  # ANDROID (önerilen yol): telefonda çalışan llama-server'a bağlan.
+  # baslat.sh bu değeri KASA_LLAMA_SUNUCU ortam değişkeniyle doldurur.
+  # Boş bırakılırsa sırayla yerel GGUF (llama-cpp-python) ve demo denenir.
+  llama_sunucu_url: ""
 
 # ---------------------------------------------------------------------------
 #  Kod araçları — "tam yazılım projesi kur" isteği için

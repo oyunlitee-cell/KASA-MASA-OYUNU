@@ -201,3 +201,44 @@ Türkçe
 19. llama.cpp — Qwen3.5 dönüştürme hatası (Ağu 2026): <https://github.com/ggml-org/llama.cpp/issues/27019>
 20. CPU dağıtım notu — Qwen3.5 için resmî GGUF yok: <https://iotdigitaltwinplm.com/slm-cpu-inference-models-compared-2026/>
 21. Android örnek uygulama (Gemma 4 E4B LiteRT = amiral gemisi, E2B = orta seviye): <https://github.com/dineshsoudagar/local-llms-on-android>
+
+---
+
+## 9. Ek: Android doğrulaması (26 Ekim 2026, ikinci tur)
+
+Telefon-only hedefi için yapılan doğrulamalar ve bunun mimariye etkisi:
+
+### Doğrulananlar
+
+| Soru | Yöntem | Sonuç |
+|---|---|---|
+| llama.cpp'nin resmî Android ikilisi var mı? | GitHub Releases API | ✅ `b11889` (25 Eki 2026): `llama-b11889-bin-android-arm64.tar.gz` (77 MB) ve `-snapdragon` varyantı (62 MB) — CPU/Adreno/Hexagon |
+| Python bağlayıcısı Gemma 4 GGUF okuyabiliyor mu? | sdist kaynağında mimari kaydı | ✅ llama-cpp-python 0.3.36 içindeki llama.cpp'de `LLM_ARCH_GEMMA4` ve `gemma4-assistant` tanımlı |
+| Telefonda derleme gerekiyor mu? | mimari kararı | ❌ **Hayır** — resmî ikili + GGUF yeterli |
+
+### Mimari değişikliği
+
+İlk sürüm modeli Python süreci içinde yüklüyordu (`llama-cpp-python`). Telefonda bu,
+C++ derlemesi demek: Termux'ta 15-30 dakika, `cmake`+`clang`, ve sık başarısızlık.
+Bu yüzden **llama-server (HTTP) yolu eklendi ve Android için varsayılan yapıldı**:
+
+```
+KASA (saf Python) ──HTTP/OpenAI──▶ llama-server (resmî Android ikilisi) ──▶ Gemma 4 GGUF
+```
+
+Kazançlar:
+* Telefonda **sıfır derleme**; Python tarafında hiçbir pip bağımlılığı yok.
+* Yeni mimariler (Qwen3.5/3.8 gibi) llama-server güncellenince anında gelir;
+  Python bağlayıcısının sürümünü beklemek gerekmez.
+* Model ayrı süreçte: çökerse arayüz ayakta kalır, log ayrı okunur.
+
+`llama-cpp-python` yolu **kaldırılmadı** — yedek olarak duruyor (masaüstü ve
+derlemek isteyenler için). Seçim sırası: `llama-server` → yerel GGUF → demo.
+
+### Bu ortamda doğrulanamayanlar (dürüstçe)
+
+* Gerçek sürüm hızı ve bellek tüketimi: sandbox'ta Android cihaz yok, ayrıca
+  egress kısıtlı olduğu için **model (huggingface.co) ve ikili
+  (objects.githubusercontent.com) indirilemiyor**.
+* Snapdragon varyantının NPU/GPU yolunu senin çipinde açıp açmadığı.
+  `asistan/android/kontrol.sh` bunu cihazında ölçer.
