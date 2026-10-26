@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Model dosyaları (GB'larca — depoya girmez)
+asistan/models/
+*.gguf
+*.litertlm
+*.safetensors
+
+# Yerel çalışma verisi
+asistan/gecmis/
+asistan/hafiza.md
+*.bak
+
+# OS
+.DS_Store
