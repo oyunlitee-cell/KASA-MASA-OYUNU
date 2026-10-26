@@ -1,0 +1,141 @@
+# ============================================================================
+#  KASA ASİSTAN — yapılandırma
+#  Kişisel, Türkçe konuşan, cihaz içi (offline) yapay zekâ asistanı.
+#  Seçilen ana model: Gemma 4 E4B (Apache 2.0) — Google AI Edge / LiteRT-LM
+# ============================================================================
+
+profil:
+  ad: "KASA"
+  kullanici_ad: "Patron"
+  dil: "tr"
+  # "sen" = samimi, "siz" = resmî
+  hitap: "sen"
+  ton: "sıcak, net, gereksiz övgü yok; bilmiyorsam 'bilmiyorum' derim"
+
+# ---------------------------------------------------------------------------
+#  Model profilleri.
+#  Hangisinin kullanılacağı:  asistan --model gemma4-e4b
+# ---------------------------------------------------------------------------
+modeller:
+
+  # ► ANA SEÇİM — telefon için en pratik, gerçekten açık kaynak (Apache 2.0)
+  gemma4-e4b:
+    etiket: "Gemma 4 E4B IT (ana model)"
+    lisans: "Apache-2.0"
+    parametre: "4.5B etkin / 8B toplam (embedding dahil)"
+    baglam: 128000
+    motorlar:
+      android: "litert-lm"        # Google AI Edge — GPU/NPU hızlandırmalı
+      masaustu: "llama-cpp"       # GGUF
+    dosyalar:
+      litertlm:
+        url: "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm"
+        boyut_gb: 3.65
+      gguf_qat:                   # Google'ın resmî QAT 4-bit'i (llama.cpp ile aynı model)
+        repo: "google/gemma-4-E4B-it-qat-q4_0-gguf"
+        dosya: "gemma-4-E4B-it-qat-q4_0.gguf"
+        boyut_gb: 5.2
+    gereksinimler:
+      ram_gb: 6                   # LiteRT-LM GPU yoluyla 8 GB'lık telefonda rahat
+      onerilen_ram_gb: 8
+    ornekleme:
+      temp: 1.0                   # Gemma 4 önerilen değerler
+      top_p: 0.95
+      top_k: 64
+    yetenekler: ["metin", "görüntü", "ses girişi", "türkçe", "kod"]
+
+  # ► Düşük RAM'li telefonlar (4-6 GB)
+  gemma4-e2b:
+    etiket: "Gemma 4 E2B IT (hafif)"
+    lisans: "Apache-2.0"
+    parametre: "2.3B etkin / 5.1B toplam"
+    baglam: 128000
+    motorlar: { android: "litert-lm", masaustu: "llama-cpp" }
+    dosyalar:
+      litertlm:
+        url: "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm"
+        boyut_gb: 2.58
+      gguf_qat:
+        repo: "google/gemma-4-E2B-it-qat-q4_0-gguf"
+        dosya: "gemma-4-E2B-it-qat-q4_0.gguf"
+        boyut_gb: 3.4
+    gereksinimler: { ram_gb: 4, onerilen_ram_gb: 6 }
+    ornekleme: { temp: 1.0, top_p: 0.95, top_k: 64 }
+    yetenekler: ["metin", "görüntü", "ses girişi", "türkçe", "kod"]
+
+  # ► DENEYSEL — kâğıt üzerinde daha güçlü (LiveCodeBench v6 55.8, 201 dil)
+  #   ama hibrit Gated-DeltaNet mimarisi telefon tarafında henüz olgun değil.
+  qwen35-4b:
+    etiket: "Qwen3.5-4B (deneysel)"
+    lisans: "Apache-2.0"
+    parametre: "4B (hibrit Gated DeltaNet + attention)"
+    baglam: 262000
+    motorlar: { android: "llama-cpp", masaustu: "llama-cpp" }
+    dosyalar:
+      gguf:
+        repo: "unsloth/Qwen3.5-4B-GGUF"
+        dosya: "Qwen3.5-4B-Q4_K_M.gguf"
+        boyut_gb: 2.7
+    gereksinimler: { ram_gb: 6, onerilen_ram_gb: 8 }
+    ornekleme: { temp: 0.7, top_p: 0.8, top_k: 20 }
+    yetenekler: ["metin", "türkçe", "kod"]
+    uyari: >-
+      Qwen3.5'in Gated DeltaNet katmanları için llama.cpp'ye yeni operatörler
+      eklendi (Şubat 2026). Android'de yalnızca güncel llama.cpp derlemeleriyle
+      çalışır ve CPU yolunda doğruluk hatası bildirildi (llama.cpp #30906).
+
+  # ► UYUMLULUK YEDEĞİ — klasik transformer, her yerde çalışır
+  qwen3-4b:
+    etiket: "Qwen3-4B-Instruct-2507 (yedek)"
+    lisans: "Apache-2.0"
+    parametre: "4.0B"
+    baglam: 262000
+    motorlar: { android: "llama-cpp", masaustu: "llama-cpp" }
+    dosyalar:
+      gguf:
+        repo: "bartowski/Qwen3-4B-Instruct-2507-GGUF"
+        dosya: "Qwen3-4B-Instruct-2507-Q4_K_M.gguf"
+        boyut_gb: 2.65
+    gereksinimler: { ram_gb: 6, onerilen_ram_gb: 8 }
+    ornekleme: { temp: 0.7, top_p: 0.8, top_k: 20 }
+    yetenekler: ["metin", "türkçe", "kod"]
+
+varsayilan_model: "gemma4-e4b"
+
+# ---------------------------------------------------------------------------
+#  Çalışma zamanı
+# ---------------------------------------------------------------------------
+calisma:
+  model_dizini: "models"
+  hafiza_dosyasi: "hafiza.md"       # asistanın senin hakkında öğrendikleri
+  gecmis_dizini: "gecmis"
+  baglam_penceresi: 8192            # telefonda 128K'yı doldurmak pili bitirir
+  maks_yeni_token: 1024
+  gpu_katmanlari: -1                # -1 = hepsi (llama.cpp ngl)
+  is_parcacigi: 4
+
+# ---------------------------------------------------------------------------
+#  Kod araçları — "tam yazılım projesi kur" isteği için
+# ---------------------------------------------------------------------------
+araclar:
+  etkin: true
+  calisma_dizini: ".."              # depo kökü (asistan/ klasörünün bir üstü)
+  izinli_komutlar:                  # güvenlik: sadece bu komutlar çalışır
+    - "ls"
+    - "cat"
+    - "git"
+    - "python3"
+    - "pytest"
+    - "grep"
+    - "wc"
+  komut_zaman_asimi_saniye: 60
+  maks_dosya_boyutu_kb: 512
+  yedekle: true                     # yazmadan önce .bak oluştur
+
+# ---------------------------------------------------------------------------
+#  Sunucu (telefonda Termux / masaüstünde localhost)
+# ---------------------------------------------------------------------------
+sunucu:
+  host: "0.0.0.0"
+  port: 8080
+  paylas_ag: false                  # true yaparsan aynı Wi-Fi'deki cihazlar erişir

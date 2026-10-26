@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KASA Asistan</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a21; --panel2:#1d222b; --line:#2a313d;
+    --txt:#e6e9ef; --dim:#98a1b3; --acc:#5b9cff; --acc2:#2f6fd0; --ok:#3ddc97; --warn:#ffb648;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    display:flex; flex-direction:column;
+  }
+  header{
+    display:flex; align-items:center; gap:10px; padding:10px 14px;
+    background:var(--panel); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5;
+  }
+  .logo{
+    width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));
+    display:grid;place-items:center;font-weight:700;color:#fff;font-size:14px;flex:0 0 auto;
+  }
+  header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.2px}
+  #durum{font-size:12px;color:var(--dim);margin-left:auto;text-align:right;line-height:1.3}
+  #durum b{color:var(--txt);font-weight:600}
+  .etiket{
+    display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--dim)
+  }
+  .etiket.uyari{color:var(--warn);border-color:#4d3d1c}
+  .etiket.tamam{color:var(--ok);border-color:#1e4d3a}
+
+  main{flex:1;overflow-y:auto;padding:16px 14px 8px;max-width:900px;width:100%;margin:0 auto}
+  .mesaj{margin:0 0 14px;display:flex;gap:10px}
+  .mesaj .kim{
+    flex:0 0 26px;height:26px;border-radius:7px;display:grid;place-items:center;
+    font-size:12px;font-weight:700;margin-top:2px;
+  }
+  .mesaj.kullanici .kim{background:var(--panel2);color:var(--acc)}
+  .mesaj.asistan .kim{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
+  .govde{flex:1;min-width:0}
+  .govde .ad{font-size:12px;color:var(--dim);margin-bottom:3px}
+  .govde .metin{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;
+  }
+  .mesaj.kullanici .govde .metin{background:var(--panel2);border-color:#2f3a4b}
+  .metin pre{
+    background:#0b0d11;border:1px solid var(--line);border-radius:8px;
+    padding:10px;overflow-x:auto;margin:8px 0;
+  }
+  .metin code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+  .metin :not(pre) > code{background:#0b0d11;padding:1px 5px;border-radius:4px}
+  .metin ul,.metin ol{margin:6px 0;padding-left:22px}
+  .imleç{display:inline-block;width:7px;height:15px;background:var(--acc);
+    animation:yan 1s steps(1) infinite;vertical-align:-2px}
+  @keyframes yan{50%{opacity:0}}
+
+  form{
+    display:flex;gap:8px;padding:10px 14px 14px;max-width:900px;width:100%;margin:0 auto;
+    border-top:1px solid var(--line);background:var(--bg);
+  }
+  textarea{
+    flex:1;resize:none;background:var(--panel);color:var(--txt);
+    border:1px solid var(--line);border-radius:12px;padding:11px 12px;
+    font:inherit;max-height:140px;min-height:46px;
+  }
+  textarea:focus{outline:none;border-color:var(--acc2)}
+  button{
+    background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:0;
+    border-radius:12px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer;
+  }
+  button:disabled{opacity:.45;cursor:default}
+  .alt{
+    max-width:900px;width:100%;margin:0 auto;padding:0 14px 12px;
+    font-size:11.5px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap;
+  }
+  .alt kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">K</div>
+  <h1>KASA Asistan</h1>
+  <div id="durum">yükleniyor…</div>
+</header>
+
+<main id="sohbet"></main>
+
+<form id="form">
+  <textarea id="girdi" rows="1" placeholder="Bir şey yaz… (Enter: gönder, Shift+Enter: satır)"></textarea>
+  <button id="gonder" type="submit">Gönder</button>
+</form>
+
+<div class="alt">
+  <span><kbd>/durum</kbd> model bilgisi</span>
+  <span><kbd>/hatırla</kbd> kalıcı not</span>
+  <span><kbd>/temizle</kbd> ekranı boşalt</span>
+  <span id="hiz"></span>
+</div>
+
+<script>
+const sohbet = document.getElementById('sohbet');
+const form   = document.getElementById('form');
+const girdi  = document.getElementById('girdi');
+const gonder = document.getElementById('gonder');
+const durumEl= document.getElementById('durum');
+const hizEl  = document.getElementById('hiz');
+
+function kacir(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// Çok basit bir markdown: kod bloğu, satır içi kod, kalın, liste, başlık
+function markdown(metin){
+  let s = kacir(metin);
+  s = s.replace(/```(\w*)\n([\s\S]*?)```/g, (m, dil, kod) =>
+      `<pre><code>${kod.replace(/\n$/,'')}</code></pre>`);
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  s = s.replace(/^###\s?(.*)$/gm, '<b>$1</b>');
+  s = s.replace(/^\s*[-*]\s+(.*)$/gm, '• $1');
+  s = s.replace(/^\s*(\d+)\.\s+(.*)$/gm, '$1. $2');
+  return s;
+}
+
+function mesajEkle(rol, metin){
+  const kutu = document.createElement('div');
+  kutu.className = 'mesaj ' + rol;
+  kutu.innerHTML =
+    `<div class="kim">${rol === 'kullanici' ? 'S' : 'K'}</div>` +
+    `<div class="govde"><div class="ad">${rol === 'kullanici' ? 'Sen' : 'KASA'}</div>` +
+    `<div class="metin">${markdown(metin)}</div></div>`;
+  sohbet.appendChild(kutu);
+  sohbet.scrollTop = sohbet.scrollHeight;
+  return kutu.querySelector('.metin');
+}
+
+function durumYukle(){
+  fetch('/api/durum').then(r => r.json()).then(d => {
+    const sinif = d.gercek_model ? 'tamam' : 'uyari';
+    durumEl.innerHTML =
+      `<b>${d.etiket || d.model}</b><br>` +
+      `<span class="etiket ${sinif}">${d.gercek_model ? 'cihaz içi model' : 'DEMO modu'}</span> ` +
+      `<span class="etiket">${d.arka_uc}</span> ` +
+      `<span class="etiket">${d.lisans || ''}</span>`;
+    if(!d.gercek_model){
+      mesajEkle('asistan',
+        'Merhaba! Ben KASA.\n\nŞu an **DEMO modundayım** — arkada gerçek bir dil modeli yüklü değil, ' +
+        'bu yüzden hazır yanıtlar veriyorum. Arayüz, araçlar ve sohbet akışı çalışıyor; ' +
+        'gerçek Türkçe üretim için model dosyasını indirmen gerekir:\n\n' +
+        '```bash\nbash asistan/modeller/indir.sh\n```\n' +
+        'Ardından sunucuyu yeniden başlat.');
+    }
+  }).catch(() => { durumEl.textContent = 'sunucuya ulaşılamadı'; });
+}
+
+async function gonderMesaj(){
+  const metin = girdi.value.trim();
+  if(!metin) return;
+
+  if(metin === '/temizle'){ sohbet.innerHTML = ''; girdi.value = ''; return; }
+  if(metin.startsWith('/hatırla ')){
+    const bilgi = metin.slice(9);
+    const r = await fetch('/api/hatirla', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({bilgi})
+    }).then(r => r.json());
+    mesajEkle('kullanici', metin);
+    mesajEkle('asistan', r.sonuc || r.hata || '');
+    girdi.value = ''; return;
+  }
+  if(metin === '/durum'){
+    const d = await fetch('/api/durum').then(r => r.json());
+    mesajEkle('kullanici', metin);
+    mesajEkle('asistan', '```json\n' + JSON.stringify(d, null, 2) + '\n```');
+    girdi.value = ''; return;
+  }
+
+  mesajEkle('kullanici', metin);
+  girdi.value = ''; girdi.style.height = 'auto';
+  gonder.disabled = true;
+  const hedef = mesajEkle('asistan', '<span class="imleç"></span>');
+
+  let biriken = '';
+  const basla = performance.now();
+  try{
+    const yanit = await fetch('/api/sohbet', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({mesaj: metin})
+    });
+    const okuyucu = yanit.body.getReader();
+    const cozucu  = new TextDecoder();
+    let tampon = '';
+    for(;;){
+      const {value, done} = await okuyucu.read();
+      if(done) break;
+      tampon += cozucu.decode(value, {stream:true});
+      const satirlar = tampon.split('\n\n');
+      tampon = satirlar.pop();
+      for(const satir of satirlar){
+        if(!satir.startsWith('data: ')) continue;
+        const veri = JSON.parse(satir.slice(6));
+        if(veri.tur === 'parca'){ biriken += veri.metin; }
+        if(veri.tur === 'bitti'){
+          const sure = (performance.now() - basla) / 1000;
+          hizEl.textContent = veri.istatistik.hiz
+            ? `${veri.istatistik.hiz} token/s` : `${sure.toFixed(1)} s`;
+        }
+      }
+      hedef.innerHTML = markdown(biriken) + '<span class="imleç"></span>';
+      sohbet.scrollTop = sohbet.scrollHeight;
+    }
+  }catch(h){
+    biriken += `\n\n[Bağlantı hatası: ${h.message}]`;
+  }
+  hedef.innerHTML = markdown(biriken);
+  sohbet.scrollTop = sohbet.scrollHeight;
+  gonder.disabled = false;
+  girdi.focus();
+}
+
+form.addEventListener('submit', e => { e.preventDefault(); gonderMesaj(); });
+girdi.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); gonderMesaj(); }
+});
+girdi.addEventListener('input', () => {
+  girdi.style.height = 'auto';
+  girdi.style.height = Math.min(girdi.scrollHeight, 140) + 'px';
+});
+
+durumYukle();
+girdi.focus();
+</script>
+</body>
+</html>
